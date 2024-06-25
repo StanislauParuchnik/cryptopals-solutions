@@ -45,14 +45,16 @@ public class Utils {
         fileString = fileString.replace("\n", "");
         log.debug(fileString);
 
-        var result = Base64.getDecoder().decode(fileString);
-
-        return result;
+        return Base64.getDecoder().decode(fileString);
     }
 
     public static boolean areBlocksEqual(byte[] buffer, int block1Start, int block2Start, int blockSize) {
+        return areBlocksEqual(buffer, block1Start, buffer, block2Start, blockSize);
+    }
+
+    public static boolean areBlocksEqual(byte[] buffer, int block1Start, byte[] buffer2, int block2Start, int blockSize) {
         for (int i = 0; i < blockSize; ++i) {
-            if (buffer[block1Start + i] != buffer[block2Start + i]) {
+            if (buffer[block1Start + i] != buffer2[block2Start + i]) {
                 return false;
             }
         }

@@ -1,6 +1,7 @@
 package cryptopals.set1;
 
-import cryptopals.AesEcbDetector;
+import cryptopals.EcbDetector;
+import cryptopals.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +24,7 @@ public class Challenge8DetectAesECBTest {
                 .map(HexFormat.of()::parseHex)
                 .toList();
 
-        var result = AesEcbDetector.detectAesEcb(encryptedTexts);
+        var result = EcbDetector.detectEcb(encryptedTexts, Utils.AES_128_BLOCK_SIZE_IN_BYTES);
 
         System.out.println(result);
 

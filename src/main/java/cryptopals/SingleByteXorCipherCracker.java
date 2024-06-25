@@ -42,7 +42,7 @@ public class SingleByteXorCipherCracker {
 
         var resultMap = new TreeMap<Double, SingleByteXorCipherCrackResult>();
 
-        for (int key = 0; key <= Byte.MAX_VALUE; key++) {
+        for (int key = Byte.MIN_VALUE; key <= Byte.MAX_VALUE; key++) {
             var deciphered = new byte[decipheredLength];
 
             for (int i = 0; i < decipheredLength; i++) {

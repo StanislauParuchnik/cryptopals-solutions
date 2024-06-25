@@ -25,7 +25,7 @@ public class Challenge11EcbCbcDetectionOracleTest {
 
         for (int attempt = 0; attempt < 3000; ++attempt) {
             var encryptedWithMode = ecbOrCbcEncryptor.encryptEcbOrCbc(input);
-            //if ecb blocks 2 and 3 are the same because ecb is stateless
+            //if ecb blocks 2 and 3 are the same because ecb is stateless and deterministic
             if (Utils.areBlocksEqual(encryptedWithMode.getValue(),
                     Utils.AES_128_BLOCK_SIZE_IN_BYTES,
                     Utils.AES_128_BLOCK_SIZE_IN_BYTES * 2,
