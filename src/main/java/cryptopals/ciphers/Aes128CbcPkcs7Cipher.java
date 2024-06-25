@@ -1,12 +1,16 @@
 package cryptopals.ciphers;
 
 import cryptopals.PKCS7Padder;
+import lombok.RequiredArgsConstructor;
 
 import static cryptopals.Utils.AES_128_BLOCK_SIZE_IN_BYTES;
 
-public class AES128_CBC_PKCS7_Cipher {
+@RequiredArgsConstructor
+public class Aes128CbcPkcs7Cipher {
 
-    public static byte[] encrypt(byte[] input, byte[] iv, byte[] key) {
+    private final Aes128EcbNoPaddingCipher aes128EcbNoPaddingCipher;
+
+    public byte[] encrypt(byte[] input, byte[] iv, byte[] key) {
         if (input == null || input.length == 0) {
             throw new IllegalArgumentException("Input can't be null or empty");
         }
@@ -25,7 +29,7 @@ public class AES128_CBC_PKCS7_Cipher {
                     previousCipherText, previousCipherTextOffset,
                     block);
 
-            AesEcbNoPaddingCipher.encrypt(block, key, 0, AES_128_BLOCK_SIZE_IN_BYTES,
+            aes128EcbNoPaddingCipher.encrypt(block, key, 0, AES_128_BLOCK_SIZE_IN_BYTES,
                     encrypted, blockNumber * AES_128_BLOCK_SIZE_IN_BYTES);
 
             previousCipherText = encrypted;
@@ -48,14 +52,14 @@ public class AES128_CBC_PKCS7_Cipher {
                 previousCipherText, previousCipherTextOffset,
                 block);
 
-        AesEcbNoPaddingCipher.encrypt(block, key, 0, AES_128_BLOCK_SIZE_IN_BYTES,
+        aes128EcbNoPaddingCipher.encrypt(block, key, 0, AES_128_BLOCK_SIZE_IN_BYTES,
                 encrypted, blockNumber * AES_128_BLOCK_SIZE_IN_BYTES);
 
 
         return encrypted;
     }
 
-    private static void fillCbcBlockToEncrypt(byte[] plainText, int plainTextOffset,
+    private void fillCbcBlockToEncrypt(byte[] plainText, int plainTextOffset,
                                               byte[] previousCipherText, int previousCipherTextOffset,
                                               byte[] output) {
         for (int i = 0; i < output.length; ++i) {
@@ -63,7 +67,7 @@ public class AES128_CBC_PKCS7_Cipher {
         }
     }
 
-    public static byte[] decrypt(byte[] encrypted, byte[] iv, byte[] key) {
+    public byte[] decrypt(byte[] encrypted, byte[] iv, byte[] key) {
         if (encrypted == null) {
             throw new IllegalArgumentException("encrypted can't be null");
         }
@@ -79,7 +83,7 @@ public class AES128_CBC_PKCS7_Cipher {
         int previousCipherTextOffset = 0;
         int offset;
         while ((offset = blockNumber * AES_128_BLOCK_SIZE_IN_BYTES) < encrypted.length) {
-            AesEcbNoPaddingCipher.decrypt(encrypted, key,
+            aes128EcbNoPaddingCipher.decrypt(encrypted, key,
                     offset, AES_128_BLOCK_SIZE_IN_BYTES,
                     decrypted, offset);
 
@@ -93,7 +97,7 @@ public class AES128_CBC_PKCS7_Cipher {
         return PKCS7Padder.unPadBuffer(decrypted);
     }
 
-    private static void applyCbcDecryption(byte[] decrypted, int decryptedOffset,
+    private void applyCbcDecryption(byte[] decrypted, int decryptedOffset,
                                            byte[] previousCipherText, int previousCipherTextOffset) {
         for (int i = 0; i < AES_128_BLOCK_SIZE_IN_BYTES; ++i) {
             decrypted[i + decryptedOffset] = (byte) (decrypted[i + decryptedOffset] ^
@@ -101,7 +105,7 @@ public class AES128_CBC_PKCS7_Cipher {
         }
     }
 
-    private static void validateBlockLength(byte[] buffer, String name) {
+    private void validateBlockLength(byte[] buffer, String name) {
         if (buffer == null) {
             throw new IllegalArgumentException(name + " can't be null");
         }

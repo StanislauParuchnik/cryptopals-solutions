@@ -17,7 +17,7 @@ public class AesEcbDetector {
             boolean shouldBreak = false;
             for (int i = 0; i < encryptedText.length / AES_128_BLOCK_SIZE_IN_BYTES; ++i) {
                 for (int j = i + 1; j < encryptedText.length / AES_128_BLOCK_SIZE_IN_BYTES; ++j) {
-                    if (areBlocksEqual(
+                    if (Utils.areBlocksEqual(
                             encryptedText,
                             i * AES_128_BLOCK_SIZE_IN_BYTES,
                             j * AES_128_BLOCK_SIZE_IN_BYTES,
@@ -34,14 +34,5 @@ public class AesEcbDetector {
         }
 
         return result;
-    }
-
-    private static boolean areBlocksEqual(byte[] buffer, int block1Start, int block2Start, int blockSize) {
-        for (int i = 0; i < blockSize; ++i) {
-            if (buffer[block1Start + i] != buffer[block2Start + i]) {
-                return false;
-            }
-        }
-        return true;
     }
 }

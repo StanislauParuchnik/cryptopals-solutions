@@ -49,4 +49,13 @@ public class Utils {
 
         return result;
     }
+
+    public static boolean areBlocksEqual(byte[] buffer, int block1Start, int block2Start, int blockSize) {
+        for (int i = 0; i < blockSize; ++i) {
+            if (buffer[block1Start + i] != buffer[block2Start + i]) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

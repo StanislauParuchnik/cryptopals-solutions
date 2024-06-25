@@ -1,7 +1,7 @@
 package cryptopals.set1;
 
 import cryptopals.Utils;
-import cryptopals.ciphers.AesEcbNoPaddingCipher;
+import cryptopals.ciphers.Aes128EcbNoPaddingCipher;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +20,7 @@ public class Challenge7AesECBDecryptTest {
 
         var key = "YELLOW SUBMARINE";
 
-        byte[] decryptedBytes = AesEcbNoPaddingCipher.decrypt(inputBytes, key.getBytes(StandardCharsets.UTF_8));
+        byte[] decryptedBytes = new Aes128EcbNoPaddingCipher().decrypt(inputBytes, key.getBytes(StandardCharsets.UTF_8));
         String decryptedString = new String(decryptedBytes);
 
         log.info(decryptedString);
