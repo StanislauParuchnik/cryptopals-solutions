@@ -4,7 +4,7 @@ import cryptopals.ciphers.Aes128EcbPkcs7Cipher;
 
 import java.security.SecureRandom;
 
-public class Challenge12Encryptor implements ConsistentKeyEncryptor {
+public class Challenge12Encryptor implements ConsistentKeyAppendingEncryptor {
 
     private final byte[] key = new byte[Utils.AES_128_BLOCK_SIZE_IN_BYTES];
     private final Aes128EcbPkcs7Cipher aes128EcbPkcs7Cipher;

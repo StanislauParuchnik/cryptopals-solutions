@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class Challenge12ByteAtATimeEcbDecryption {
 
-    private final Challenge12Encryptor encryptor;
+    private final ConsistentKeyAppendingEncryptor encryptor;
 
     public byte[] decryptAppendedText() {
         var sizes = determineSizes();
