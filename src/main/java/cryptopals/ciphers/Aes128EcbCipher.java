@@ -1,6 +1,6 @@
 package cryptopals.ciphers;
 
-import cryptopals.CryptoException;
+import cryptopals.exceptions.CryptoException;
 import lombok.RequiredArgsConstructor;
 
 import javax.crypto.Cipher;

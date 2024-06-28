@@ -94,7 +94,7 @@ public class Aes128CbcPkcs7Cipher {
             blockNumber++;
         }
 
-        return PKCS7Padder.unPadBuffer(decrypted);
+        return PKCS7Padder.unPadBuffer(decrypted, AES_128_BLOCK_SIZE_IN_BYTES);
     }
 
     private void applyCbcDecryption(byte[] decrypted, int decryptedOffset,

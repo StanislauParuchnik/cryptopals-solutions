@@ -1,5 +1,7 @@
 package cryptopals;
 
+import cryptopals.exceptions.InvalidPaddingException;
+
 import java.util.Arrays;
 
 public class PKCS7Padder {
@@ -44,11 +46,21 @@ public class PKCS7Padder {
         Arrays.fill(out, outOffset, outOffset + blockSize, (byte) blockSize);
     }
 
-    public static byte[] unPadBuffer(byte[] input) {
+    public static byte[] unPadBuffer(byte[] input, int blockSize) {
         var numberOfAddedBytes = input[input.length - 1];
 
+        if (numberOfAddedBytes > blockSize) {
+            throw new InvalidPaddingException("Padded number of bytes greater than blockSize=" + blockSize);
+        }
+
         if (numberOfAddedBytes > input.length) {
-            throw new IllegalArgumentException("Improperly padded input");
+            throw new InvalidPaddingException("Padded number of bytes greater than input length");
+        }
+
+        for (int i = 0; i < numberOfAddedBytes; ++i) {
+            if (input[input.length - 1 - i] != numberOfAddedBytes) {
+                throw new InvalidPaddingException("Invalid padding");
+            }
         }
 
         var output = new byte[input.length - numberOfAddedBytes];
