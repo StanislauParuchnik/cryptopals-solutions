@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class Challenge15PKCS7PaddingValidation {
+public class Challenge15PKCS7PaddingValidationTest {
 
     @Test
     void testValidPadding() {
