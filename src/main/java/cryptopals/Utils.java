@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.HexFormat;
 
 public class Utils {
 
@@ -59,5 +60,29 @@ public class Utils {
             }
         }
         return true;
+    }
+
+    public static String toBlockHexString(byte[] buffer, int blockSize) {
+        var sb = new StringBuilder("[");
+
+        HexFormat.of().formatHex(sb, buffer, 0, Math.min(buffer.length, blockSize));
+
+        for (int i = blockSize; i < buffer.length; i += blockSize) {
+            sb.append(" ");
+            HexFormat.of().formatHex(sb, buffer, i, Math.min(buffer.length, i + blockSize));
+        }
+
+        var rest = buffer.length % blockSize;
+        if (rest > 0) {
+            sb.append(" ");
+            HexFormat.of().formatHex(sb, buffer, buffer.length - rest, buffer.length);
+
+            var pad = blockSize - rest;
+            sb.append("_".repeat(Math.max(0, pad)));
+        }
+
+        sb.append("]");
+
+        return sb.toString();
     }
 }

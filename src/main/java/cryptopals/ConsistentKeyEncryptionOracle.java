@@ -1,6 +1,6 @@
 package cryptopals;
 
-public interface ConsistentKeyAppendingEncryptor {
+public interface ConsistentKeyEncryptionOracle {
 
     byte[] encrypt(byte[] input);
 

@@ -1,7 +1,8 @@
 package cryptopals.set2;
 
-import cryptopals.AppendingConsistentKeyEncryptionOracle;
 import cryptopals.ByteAtATimeEcbAppendedDataDecryption;
+import cryptopals.PrependingAndAppendingConsistentKeyEncryptionOracle;
+import cryptopals.Utils;
 import cryptopals.ciphers.Aes128EcbPkcs7Cipher;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -11,10 +12,32 @@ import java.util.Base64;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Slf4j
-public class Challenge12ByteAtATimeEcbDecryptionTest {
+public class Challenge14ByteAtATimeEcbDecryptionTest {
+
 
     @Test
-    void test() {
+    void testPrefixSizeLessThanBlockSize() {
+        test(5);
+    }
+
+    @Test
+    void testPrefixSizeLessThanBlockSize2() {
+        test(Utils.AES_128_BLOCK_SIZE_IN_BYTES - 5);
+    }
+
+    @Test
+    void testPrefixSizeEqualsBlockSize() {
+        test(Utils.AES_128_BLOCK_SIZE_IN_BYTES);
+    }
+
+    @Test
+    void testPrefixSizeGreaterThanBlockSize() {
+        test(Utils.AES_128_BLOCK_SIZE_IN_BYTES + 5);
+    }
+
+
+
+    private void test(int prependedBytesNumber) {
         var appendedBytes = Base64.getDecoder().decode(
                 "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg" +
                         "aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq" +
@@ -22,8 +45,9 @@ public class Challenge12ByteAtATimeEcbDecryptionTest {
                         "YnkK");
 
         var ecbDecryption = new ByteAtATimeEcbAppendedDataDecryption(
-                new AppendingConsistentKeyEncryptionOracle(new Aes128EcbPkcs7Cipher(),
-                        appendedBytes
+                new PrependingAndAppendingConsistentKeyEncryptionOracle(new Aes128EcbPkcs7Cipher(),
+                        appendedBytes,
+                        prependedBytesNumber
                 )
         );
 
