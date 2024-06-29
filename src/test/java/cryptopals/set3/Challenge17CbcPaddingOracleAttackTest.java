@@ -4,7 +4,6 @@ import cryptopals.CbcPaddingOracleAttack;
 import cryptopals.Challenge17CbcPaddingOracle;
 import cryptopals.Utils;
 import cryptopals.ciphers.Aes128CbcPkcs7Cipher;
-import cryptopals.ciphers.Aes128EcbNoPaddingCipher;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -38,9 +37,7 @@ public class Challenge17CbcPaddingOracleAttackTest {
         var iv = new byte[Utils.AES_128_BLOCK_SIZE_IN_BYTES];
         new SecureRandom().nextBytes(iv);
 
-        var paddingOracle = new Challenge17CbcPaddingOracle(
-                new Aes128CbcPkcs7Cipher(new Aes128EcbNoPaddingCipher())
-        );
+        var paddingOracle = new Challenge17CbcPaddingOracle(new Aes128CbcPkcs7Cipher());
 
         var encrypted = paddingOracle.encrypt(input.getBytes(StandardCharsets.UTF_8), iv);
 

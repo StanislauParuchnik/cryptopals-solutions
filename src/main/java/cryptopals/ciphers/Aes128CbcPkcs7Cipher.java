@@ -1,21 +1,20 @@
 package cryptopals.ciphers;
 
 import cryptopals.PKCS7Padder;
-import lombok.RequiredArgsConstructor;
+import cryptopals.Utils;
 
 import static cryptopals.Utils.AES_128_BLOCK_SIZE_IN_BYTES;
 
-@RequiredArgsConstructor
 public class Aes128CbcPkcs7Cipher {
 
-    private final Aes128EcbNoPaddingCipher aes128EcbNoPaddingCipher;
+    private final Aes128EcbNoPaddingCipher aes128EcbNoPaddingCipher = new Aes128EcbNoPaddingCipher();
 
     public byte[] encrypt(byte[] input, byte[] iv, byte[] key) {
         if (input == null || input.length == 0) {
             throw new IllegalArgumentException("Input can't be null or empty");
         }
-        validateBlockLength(iv, "Init vector");
-        validateBlockLength(key, "Key");
+        Utils.validateBlockLength(iv, "Init vector");
+        Utils.validateBlockLength(key, "Key");
 
         var encryptedSize = (input.length / AES_128_BLOCK_SIZE_IN_BYTES + 1) * AES_128_BLOCK_SIZE_IN_BYTES;
         var encrypted = new byte[encryptedSize];
@@ -84,8 +83,8 @@ public class Aes128CbcPkcs7Cipher {
         if (length % AES_128_BLOCK_SIZE_IN_BYTES != 0) {
             throw new IllegalArgumentException("encrypted length is incorrect");
         }
-        validateBlockLength(iv, "Init vector");
-        validateBlockLength(key, "Key");
+        Utils.validateBlockLength(iv, "Init vector");
+        Utils.validateBlockLength(key, "Key");
 
         int blockNumber = 0;
         byte[] decrypted = new byte[length];
@@ -112,15 +111,6 @@ public class Aes128CbcPkcs7Cipher {
         for (int i = 0; i < AES_128_BLOCK_SIZE_IN_BYTES; ++i) {
             decrypted[i + decryptedOffset] = (byte) (decrypted[i + decryptedOffset] ^
                     previousCipherText[i + previousCipherTextOffset]);
-        }
-    }
-
-    private void validateBlockLength(byte[] buffer, String name) {
-        if (buffer == null) {
-            throw new IllegalArgumentException(name + " can't be null");
-        }
-        if (buffer.length != AES_128_BLOCK_SIZE_IN_BYTES) {
-            throw new IllegalArgumentException(name + " length is incorrect");
         }
     }
 }

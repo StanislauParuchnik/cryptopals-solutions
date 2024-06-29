@@ -3,7 +3,6 @@ package cryptopals.set2;
 import cryptopals.Challenge11EncryptEcbOrCbc;
 import cryptopals.Utils;
 import cryptopals.ciphers.Aes128CbcPkcs7Cipher;
-import cryptopals.ciphers.Aes128EcbNoPaddingCipher;
 import cryptopals.ciphers.Aes128EcbPkcs7Cipher;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +19,7 @@ public class Challenge11EcbCbcDetectionOracleTest {
 
         var ecbOrCbcEncryptor = new Challenge11EncryptEcbOrCbc(
                 new Aes128EcbPkcs7Cipher(),
-                new Aes128CbcPkcs7Cipher(new Aes128EcbNoPaddingCipher())
+                new Aes128CbcPkcs7Cipher()
         );
 
         for (int attempt = 0; attempt < 3000; ++attempt) {

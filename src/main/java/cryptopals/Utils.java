@@ -62,6 +62,15 @@ public class Utils {
         return true;
     }
 
+    public static void validateBlockLength(byte[] buffer, String name) {
+        if (buffer == null) {
+            throw new IllegalArgumentException(name + " can't be null");
+        }
+        if (buffer.length != AES_128_BLOCK_SIZE_IN_BYTES) {
+            throw new IllegalArgumentException(name + " length is incorrect");
+        }
+    }
+
     public static String toBlockHexString(byte[] buffer, int blockSize) {
         var sb = new StringBuilder("[");
 

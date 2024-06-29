@@ -2,7 +2,6 @@ package cryptopals.set2;
 
 import cryptopals.Utils;
 import cryptopals.ciphers.Aes128CbcPkcs7Cipher;
-import cryptopals.ciphers.Aes128EcbNoPaddingCipher;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -113,7 +112,7 @@ public class Challenge10AESCBCModeTest {
         var initVector = new byte[Utils.AES_128_BLOCK_SIZE_IN_BYTES];
         var key = "rewtasdvcxagtn w".getBytes(StandardCharsets.UTF_8);
 
-        var cipher = createAes128CbcPkcs7Cipher();
+        var cipher = new Aes128CbcPkcs7Cipher();
         var encrypted = cipher.encrypt(inputBytes, initVector, key);
 
         var decrypted = cipher.decrypt(encrypted, initVector, key);
@@ -217,7 +216,7 @@ public class Challenge10AESCBCModeTest {
         cipherAes.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivSpec);
         var encrypted = cipherAes.doFinal(inputBytes);
 
-        var cipher = createAes128CbcPkcs7Cipher();
+        var cipher = new Aes128CbcPkcs7Cipher();
         var decrypted = cipher.decrypt(encrypted, initVector, key);
 
         assertEquals(input, new String(decrypted));
@@ -320,7 +319,7 @@ public class Challenge10AESCBCModeTest {
         cipherAes.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivSpec);
         var encrypted = cipherAes.doFinal(inputBytes);
 
-        var cipher = createAes128CbcPkcs7Cipher();
+        var cipher = new Aes128CbcPkcs7Cipher();
         var decrypted = cipher.decrypt(encrypted, initVector, key);
 
         assertEquals(input, new String(decrypted));
@@ -333,7 +332,7 @@ public class Challenge10AESCBCModeTest {
         var iv = new byte[Utils.AES_128_BLOCK_SIZE_IN_BYTES];
         var key = "YELLOW SUBMARINE".getBytes(StandardCharsets.UTF_8);
 
-        var cipher = createAes128CbcPkcs7Cipher();
+        var cipher = new Aes128CbcPkcs7Cipher();
         var decrypted = new String(cipher.decrypt(encrypted, iv, key));
 
         log.info(decrypted);
@@ -419,9 +418,5 @@ public class Challenge10AESCBCModeTest {
                 Play that funky music, white boy Come on, Come on, Come on\s
                 Play that funky music\s
                 """, decrypted);
-    }
-
-    private Aes128CbcPkcs7Cipher createAes128CbcPkcs7Cipher() {
-        return new Aes128CbcPkcs7Cipher(new Aes128EcbNoPaddingCipher());
     }
 }
