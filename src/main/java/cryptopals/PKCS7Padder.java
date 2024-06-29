@@ -49,7 +49,7 @@ public class PKCS7Padder {
     public static byte[] unPadBuffer(byte[] input, int blockSize) {
         var numberOfAddedBytes = input[input.length - 1];
 
-        if (numberOfAddedBytes > blockSize) {
+        if (numberOfAddedBytes > blockSize || numberOfAddedBytes <= 0) {
             throw new InvalidPaddingException("Padded number of bytes greater than blockSize=" + blockSize);
         }
 
@@ -63,8 +63,7 @@ public class PKCS7Padder {
             }
         }
 
-        var output = new byte[input.length - numberOfAddedBytes];
-        System.arraycopy(input, 0, output, 0, output.length);
+        var output = Arrays.copyOf(input,input.length - numberOfAddedBytes);
 
         return output;
     }

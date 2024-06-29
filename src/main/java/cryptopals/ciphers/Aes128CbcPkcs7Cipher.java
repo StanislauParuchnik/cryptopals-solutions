@@ -71,18 +71,28 @@ public class Aes128CbcPkcs7Cipher {
         if (encrypted == null) {
             throw new IllegalArgumentException("encrypted can't be null");
         }
-        if (encrypted.length % AES_128_BLOCK_SIZE_IN_BYTES != 0) {
+        return decrypt(encrypted, encrypted.length, iv, key);
+    }
+
+    public byte[] decrypt(byte[] encrypted, int length, byte[] iv, byte[] key) {
+        if (encrypted == null) {
+            throw new IllegalArgumentException("encrypted can't be null");
+        }
+        if (encrypted.length < length) {
+            throw new IllegalArgumentException("encrypted buffer is shorter than " + length);
+        }
+        if (length % AES_128_BLOCK_SIZE_IN_BYTES != 0) {
             throw new IllegalArgumentException("encrypted length is incorrect");
         }
         validateBlockLength(iv, "Init vector");
         validateBlockLength(key, "Key");
 
         int blockNumber = 0;
-        byte[] decrypted = new byte[encrypted.length];
+        byte[] decrypted = new byte[length];
         byte[] previousCipherText = iv;
         int previousCipherTextOffset = 0;
         int offset;
-        while ((offset = blockNumber * AES_128_BLOCK_SIZE_IN_BYTES) < encrypted.length) {
+        while ((offset = blockNumber * AES_128_BLOCK_SIZE_IN_BYTES) < length) {
             aes128EcbNoPaddingCipher.decrypt(encrypted, key,
                     offset, AES_128_BLOCK_SIZE_IN_BYTES,
                     decrypted, offset);
