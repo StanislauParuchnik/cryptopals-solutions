@@ -59,11 +59,12 @@ public class Aes128CbcPkcs7Cipher {
     }
 
     private void fillCbcBlockToEncrypt(byte[] plainText, int plainTextOffset,
-                                              byte[] previousCipherText, int previousCipherTextOffset,
-                                              byte[] output) {
-        for (int i = 0; i < output.length; ++i) {
-            output[i] = (byte) (plainText[i + plainTextOffset] ^ previousCipherText[i + previousCipherTextOffset]);
-        }
+                                       byte[] previousCipherText, int previousCipherTextOffset,
+                                       byte[] output) {
+        Utils.xor(plainText, plainTextOffset,
+                previousCipherText, previousCipherTextOffset,
+                output, 0,
+                output.length);
     }
 
     public byte[] decrypt(byte[] encrypted, byte[] iv, byte[] key) {
@@ -107,10 +108,10 @@ public class Aes128CbcPkcs7Cipher {
     }
 
     private void applyCbcDecryption(byte[] decrypted, int decryptedOffset,
-                                           byte[] previousCipherText, int previousCipherTextOffset) {
-        for (int i = 0; i < AES_128_BLOCK_SIZE_IN_BYTES; ++i) {
-            decrypted[i + decryptedOffset] = (byte) (decrypted[i + decryptedOffset] ^
-                    previousCipherText[i + previousCipherTextOffset]);
-        }
+                                    byte[] previousCipherText, int previousCipherTextOffset) {
+        Utils.xor(decrypted, decryptedOffset,
+                previousCipherText, previousCipherTextOffset,
+                decrypted, decryptedOffset,
+                AES_128_BLOCK_SIZE_IN_BYTES);
     }
 }

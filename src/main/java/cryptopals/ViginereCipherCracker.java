@@ -32,7 +32,7 @@ public class ViginereCipherCracker {
 //        log.debug("input length: {}", input.length);
         String bestCandidate = null;
         double bestCandidateMetric = Double.MAX_VALUE;
-        char[] bestKey = {};
+        byte[] bestKey = {};
 
         int i = 0;
         var iterator = keyLengthProbabilities.entrySet().iterator();
@@ -41,7 +41,7 @@ public class ViginereCipherCracker {
             var keyLength = iterator.next().getValue();
             log.debug("Cracking for key length = {}", keyLength);
 
-            char[] key = new char[keyLength];
+            byte[] key = new byte[keyLength];
             for (int keyByte = 0; keyByte < keyLength; keyByte++) {
                 log.debug("Cracking key byte = {}", keyByte);
                 var crackedForKeyResults = singleByteXorCipherCracker.crackXorCipher(
@@ -81,7 +81,7 @@ public class ViginereCipherCracker {
         return new ViginereCipherCrackResult(
                 bestCandidateMetric,
                 bestCandidate,
-                new String(bestKey)
+                bestKey
         );
     }
 

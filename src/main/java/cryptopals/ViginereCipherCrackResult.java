@@ -10,5 +10,5 @@ import lombok.ToString;
 public class ViginereCipherCrackResult {
     private final double metric;
     private final String decryptedString;
-    private final String key;
+    private final byte[] key;
 }

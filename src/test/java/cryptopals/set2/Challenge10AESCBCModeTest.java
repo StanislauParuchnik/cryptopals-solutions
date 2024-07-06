@@ -328,7 +328,7 @@ public class Challenge10AESCBCModeTest {
 
     @Test
     void testExample() throws IOException {
-        var encrypted = Utils.readBase64FromFile(Paths.get("src\\test\\resources\\set1\\set2Challenge10.txt"));
+        var encrypted = Utils.readBase64FromFile(Paths.get("src\\test\\resources\\set2\\set2Challenge10.txt"));
         var iv = new byte[Utils.AES_128_BLOCK_SIZE_IN_BYTES];
         var key = "YELLOW SUBMARINE".getBytes(StandardCharsets.UTF_8);
 

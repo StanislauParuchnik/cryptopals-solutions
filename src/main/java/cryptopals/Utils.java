@@ -6,8 +6,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.List;
 
 public class Utils {
 
@@ -43,10 +45,17 @@ public class Utils {
 
     public static byte[] readBase64FromFile(Path path) throws IOException {
         var fileString = Files.readString(path);
-        fileString = fileString.replace("\n", "");
+        fileString = fileString.replaceAll("[\r,\n]", "");
         log.debug(fileString);
 
         return Base64.getDecoder().decode(fileString);
+    }
+
+    public static List<byte[]> readBase64LinesFromFile(Path path) throws IOException {
+        return Files.readString(path)
+                .lines()
+                .map(Base64.getDecoder()::decode)
+                .toList();
     }
 
     public static boolean areBlocksEqual(byte[] buffer, int block1Start, int block2Start, int blockSize) {
@@ -54,12 +63,8 @@ public class Utils {
     }
 
     public static boolean areBlocksEqual(byte[] buffer, int block1Start, byte[] buffer2, int block2Start, int blockSize) {
-        for (int i = 0; i < blockSize; ++i) {
-            if (buffer[block1Start + i] != buffer2[block2Start + i]) {
-                return false;
-            }
-        }
-        return true;
+        return Arrays.equals(buffer, block1Start, block1Start + blockSize,
+                buffer2, block2Start, block2Start + blockSize);
     }
 
     public static void validateBlockLength(byte[] buffer, String name) {
@@ -70,6 +75,32 @@ public class Utils {
             throw new IllegalArgumentException(name + " length is incorrect");
         }
     }
+
+    public static void xor(byte[] input1, int input1Start, byte[] input2, int input2Start,
+                           byte[] output, int outputStart, int length) {
+        for (int i = 0; i < length; ++i) {
+            output[outputStart + i] = (byte) (input1[input1Start + i] ^ input2[input2Start + i]);
+        }
+    }
+
+    public static void xor(byte[] input1, int input1Start, byte value,
+                           byte[] output, int outputStart, int length) {
+        for (int i = 0; i < length; ++i) {
+            output[outputStart + i] = (byte) (input1[input1Start + i] ^ value);
+        }
+    }
+
+    public static void xor(byte[] buffer, int bufferStart, byte value, int length) {
+        Utils.xor(buffer, bufferStart, value, buffer, bufferStart, length);
+    }
+
+    public static byte[] xor(byte[] input1, int input1Start, byte[] input2, int input2Start,
+                             int length) {
+        var output = new byte[length];
+        xor(input1, input1Start, input2, input2Start, output, 0, length);
+        return output;
+    }
+
 
     public static String toBlockHexString(byte[] buffer, int blockSize) {
         var sb = new StringBuilder("[");

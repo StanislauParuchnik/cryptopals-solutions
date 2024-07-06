@@ -58,7 +58,7 @@ public class SingleByteXorCipherCracker {
                 log.debug("{} - {} key {} ({})", text, metric, (char) key, key);
             }
 
-            resultMap.put(metric, new SingleByteXorCipherCrackResult(metric, deciphered, text, (char) key));
+            resultMap.put(metric, new SingleByteXorCipherCrackResult(metric, deciphered, text, (byte) key));
             while (resultMap.size() > maxNumberOfResultsReturned) {
                 resultMap.pollLastEntry();
             }

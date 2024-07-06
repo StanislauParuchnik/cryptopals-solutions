@@ -38,7 +38,7 @@ public class Challenge6ViginereCipherCrackerTest {
 
         log.info(result.toString());
 
-        assertEquals("Terminator X: Bring the noise", result.getKey());
+        assertEquals("Terminator X: Bring the noise", new String(result.getKey()));
 
         assertEquals("""
                 I'm back and I'm ringin' the bell\s
@@ -143,7 +143,7 @@ public class Challenge6ViginereCipherCrackerTest {
 
         log.info(result.toString());
         assertEquals(expected, result.getDecryptedString());
-        assertEquals("ICE", result.getKey());
+        assertEquals("ICE", new String(result.getKey()));
     }
 
     @Test

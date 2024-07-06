@@ -32,9 +32,9 @@ public class CbcPaddingOracleAttack {
                             decrypted[decryptedBlockStartIdx + modifiedByteIdx] = (byte) plainTextValue;
 
                             byte paddingValueForNextIteration = (byte) (paddingByteValue ^ (paddingByteValue + 1));
-                            for (int i = modifiedByteIdx; i < Utils.AES_128_BLOCK_SIZE_IN_BYTES; ++i) {
-                                modifiedEncrypted[modifiedEncryptedStartIdx + i] ^= paddingValueForNextIteration;
-                            }
+                            Utils.xor(modifiedEncrypted, modifiedEncryptedStartIdx + modifiedByteIdx,
+                                    paddingValueForNextIteration,
+                                    Utils.AES_128_BLOCK_SIZE_IN_BYTES - modifiedByteIdx);
                             break;
                         }
                     }
@@ -55,9 +55,8 @@ public class CbcPaddingOracleAttack {
                     decrypted[modifiedByteIdx] = (byte) plainTextValue;
 
                     byte paddingValueForNextIteration = (byte) (paddingByteValue ^ (paddingByteValue + 1));
-                    for (int i = modifiedByteIdx; i < Utils.AES_128_BLOCK_SIZE_IN_BYTES; ++i) {
-                        modifiedIv[i] ^= paddingValueForNextIteration;
-                    }
+                    Utils.xor(modifiedIv, modifiedByteIdx, paddingValueForNextIteration,
+                            Utils.AES_128_BLOCK_SIZE_IN_BYTES - modifiedByteIdx);
                     break;
                 }
             }

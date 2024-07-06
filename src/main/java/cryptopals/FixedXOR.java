@@ -9,9 +9,10 @@ public class FixedXOR {
             throw new RuntimeException("buffer length does not match");
         }
         var result = new byte[buf1.length];
-        for (int i = 0; i < buf1.length; i++) {
-            result[i] = (byte) (buf1[i] ^ buf2[i]);
-        }
+        Utils.xor(buf1, 0,
+                buf2, 0,
+                result, 0,
+                buf1.length);
         return result;
     }
 
