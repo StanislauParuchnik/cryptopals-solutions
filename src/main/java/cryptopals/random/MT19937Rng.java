@@ -25,6 +25,10 @@ public class MT19937Rng {
         initState(seed);
     }
 
+    public void setSeed(int seed) {
+        initState(seed);
+    }
+
     private void initState(int seed) {
         state[0] = seed;
         for (stateIdx = 1; stateIdx < n; stateIdx++) {
