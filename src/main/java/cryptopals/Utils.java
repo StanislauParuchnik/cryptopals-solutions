@@ -33,10 +33,10 @@ public class Utils {
 
         int distance = 0;
         for (int i = 0; i < size; i++) {
-            var diff = 0x00ff & (a[i] ^ b[i]);
+            var diff = a[i] ^ b[i];
             while (diff != 0) {
                 distance += diff & 1;
-                diff = diff >> 1;
+                diff = diff >>> 1;
             }
         }
 
