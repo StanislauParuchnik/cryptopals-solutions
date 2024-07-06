@@ -25,6 +25,10 @@ public class MT19937Rng {
         initState(seed);
     }
 
+    public MT19937Rng(int[] state, int stateIdx) {
+        setState(state, stateIdx);
+    }
+
     public void setSeed(int seed) {
         initState(seed);
     }
@@ -34,6 +38,11 @@ public class MT19937Rng {
         for (stateIdx = 1; stateIdx < n; stateIdx++) {
             state[stateIdx] = f * (state[stateIdx - 1] ^ (state[stateIdx - 1] >>> (w - 2))) + stateIdx;
         }
+    }
+
+    public void setState(int[] state, int stateIdx) {
+        System.arraycopy(state, 0, this.state, 0, this.state.length);
+        this.stateIdx = stateIdx;
     }
 
     private void twist() {
