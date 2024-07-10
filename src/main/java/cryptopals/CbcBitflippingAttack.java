@@ -12,11 +12,12 @@ public class CbcBitflippingAttack {
 
     private final Aes128CbcPkcs7Cipher aes128CbcPkcs7Cipher;
     private final byte[] key;
-    private final byte[] iv = new byte[Utils.AES_128_BLOCK_SIZE_IN_BYTES];
+    private final byte[] iv;
 
     public CbcBitflippingAttack(Aes128CbcPkcs7Cipher aes128CbcPkcs7Cipher) {
         this.aes128CbcPkcs7Cipher = aes128CbcPkcs7Cipher;
         key = Utils.randomBytes(Utils.AES_128_BLOCK_SIZE_IN_BYTES);
+        iv = Utils.randomBytes(Utils.AES_128_BLOCK_SIZE_IN_BYTES);
     }
 
     public byte[] encryptInput(String str) {

@@ -12,7 +12,6 @@ public class Challenge16CbcBitflippingAttackTest {
     void test() {
         var instance = new CbcBitflippingAttack(new Aes128CbcPkcs7Cipher());
 
-
         var forged = instance.forgeAdmin();
 
         assertTrue(instance.isAdmin(forged));
