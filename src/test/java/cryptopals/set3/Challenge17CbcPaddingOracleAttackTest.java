@@ -9,7 +9,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -34,8 +33,7 @@ public class Challenge17CbcPaddingOracleAttackTest {
     })
     void test(String input) {
 
-        var iv = new byte[Utils.AES_128_BLOCK_SIZE_IN_BYTES];
-        new SecureRandom().nextBytes(iv);
+        var iv = Utils.randomBytes(Utils.AES_128_BLOCK_SIZE_IN_BYTES);
 
         var paddingOracle = new Challenge17CbcPaddingOracle(new Aes128CbcPkcs7Cipher());
 

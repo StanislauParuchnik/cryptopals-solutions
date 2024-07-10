@@ -1,13 +1,13 @@
 package cryptopals.set3;
 
 import cryptopals.MT19937StreamXorCipherCracker;
+import cryptopals.Utils;
 import cryptopals.ciphers.MT19937StreamXorCipher;
 import cryptopals.metrics.FreqSquareDiffMetric;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -22,7 +22,7 @@ public class Challenge24BreakMt19937StreamXorCipherTest {
 
         var cipher = new MT19937StreamXorCipher();
 
-        var seed = new SecureRandom().nextInt(0, 1<<16); //16 bit
+        var seed = Utils.SECURE_RANDOM.nextInt(0, 1<<16); //16 bit
         var encrypted = cipher.apply(plaintext.getBytes(StandardCharsets.UTF_8), seed);
 
         var decrypted = cipher.apply(encrypted, seed);
@@ -38,7 +38,7 @@ public class Challenge24BreakMt19937StreamXorCipherTest {
 
         var cipher = new MT19937StreamXorCipher();
 
-        var seed = new SecureRandom().nextInt(0, 1<<16); //16 bit
+        var seed = Utils.SECURE_RANDOM.nextInt(0, 1<<16); //16 bit
         var encrypted = cipher.apply(plaintext.getBytes(StandardCharsets.UTF_8), seed);
 
         var cracker = new MT19937StreamXorCipherCracker(cipher, new FreqSquareDiffMetric());

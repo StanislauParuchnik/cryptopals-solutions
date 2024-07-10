@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.security.SecureRandom;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,15 +28,14 @@ public class Challenge19and20BreakFixedNonceCtrTest {
 
 
         crackResult.decrypted().forEach(pt -> System.out.println(new String(pt)));
-        assertEquals("I'm rated \"R\"...this is a warning, ya better void / P",
+        assertEquals("i'm rated \"R\"...this is a warning, ya better void / P",
                 new String(crackResult.decrypted().get(0)));
     }
 
     private List<byte[]> encryptPlainTexts(List<byte[]> plainTexts) {
         var nonce = 0;
 
-        var key = new byte[Utils.AES_128_BLOCK_SIZE_IN_BYTES];
-        new SecureRandom().nextBytes(key);
+        var key = Utils.randomBytes(Utils.AES_128_BLOCK_SIZE_IN_BYTES);
 
         var ctrCipher = new Aes128CtrCipher();
 

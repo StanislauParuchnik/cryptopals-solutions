@@ -1,22 +1,22 @@
 package cryptopals;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import cryptopals.ciphers.Aes128EcbNoPaddingCipher;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 
+@Slf4j
 public class Utils {
 
     public static final int AES_128_BLOCK_SIZE_IN_BYTES = 128 / 8;
-
-
-    private static final Logger log = LoggerFactory.getLogger(Utils.class);
+    public static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     public static int hammingDistanceBits(byte[] a, byte[] b) {
         if (a.length != b.length) {
@@ -49,6 +49,11 @@ public class Utils {
         log.debug(fileString);
 
         return Base64.getDecoder().decode(fileString);
+    }
+
+    public static byte[] readBase64FromFileAndDecryptECB(Path path, byte[] key) throws IOException {
+        var inputBytes = Utils.readBase64FromFile(path);
+        return new Aes128EcbNoPaddingCipher().decrypt(inputBytes, key);
     }
 
     public static List<byte[]> readBase64LinesFromFile(Path path) throws IOException {
@@ -124,5 +129,11 @@ public class Utils {
         sb.append("]");
 
         return sb.toString();
+    }
+
+    public static byte[] randomBytes(int length) {
+        var bytes = new byte[length];
+        SECURE_RANDOM.nextBytes(bytes);
+        return bytes;
     }
 }

@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -17,8 +16,7 @@ public class CbcBitflippingAttack {
 
     public CbcBitflippingAttack(Aes128CbcPkcs7Cipher aes128CbcPkcs7Cipher) {
         this.aes128CbcPkcs7Cipher = aes128CbcPkcs7Cipher;
-        key = new byte[Utils.AES_128_BLOCK_SIZE_IN_BYTES];
-        new SecureRandom().nextBytes(key);
+        key = Utils.randomBytes(Utils.AES_128_BLOCK_SIZE_IN_BYTES);
     }
 
     public byte[] encryptInput(String str) {

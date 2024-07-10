@@ -4,18 +4,17 @@ import cryptopals.Utils;
 import cryptopals.ciphers.Aes128EcbPkcs7Cipher;
 
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class UserProfileManager {
 
-    private final byte[] key = new byte[Utils.AES_128_BLOCK_SIZE_IN_BYTES];
+    private final byte[] key;
     private final Aes128EcbPkcs7Cipher aes128EcbPkcs7Cipher;
 
     public UserProfileManager(Aes128EcbPkcs7Cipher aes128EcbPkcs7Cipher) {
         this.aes128EcbPkcs7Cipher = aes128EcbPkcs7Cipher;
-        new SecureRandom().nextBytes(key);
+        this.key = Utils.randomBytes(Utils.AES_128_BLOCK_SIZE_IN_BYTES);
     }
 
     public UserProfile profileFor(String email) {

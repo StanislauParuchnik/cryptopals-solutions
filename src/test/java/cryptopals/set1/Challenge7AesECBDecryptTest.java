@@ -1,7 +1,6 @@
 package cryptopals.set1;
 
 import cryptopals.Utils;
-import cryptopals.ciphers.Aes128EcbNoPaddingCipher;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -16,11 +15,10 @@ public class Challenge7AesECBDecryptTest {
 
     @Test
     void testDecrypt() throws IOException {
-        var inputBytes = Utils.readBase64FromFile(Paths.get("src\\test\\resources\\set1\\set1Challenge7.txt"));
-
-        var key = "YELLOW SUBMARINE";
-
-        byte[] decryptedBytes = new Aes128EcbNoPaddingCipher().decrypt(inputBytes, key.getBytes(StandardCharsets.UTF_8));
+        byte[] decryptedBytes = Utils.readBase64FromFileAndDecryptECB(
+                Paths.get("src\\test\\resources\\set1\\set1Challenge7.txt"),
+                "YELLOW SUBMARINE".getBytes(StandardCharsets.UTF_8)
+        );
         String decryptedString = new String(decryptedBytes);
 
         log.info(decryptedString);

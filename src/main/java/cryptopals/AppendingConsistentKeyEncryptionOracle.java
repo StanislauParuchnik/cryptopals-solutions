@@ -2,17 +2,15 @@ package cryptopals;
 
 import cryptopals.ciphers.Aes128EcbPkcs7Cipher;
 
-import java.security.SecureRandom;
-
 public class AppendingConsistentKeyEncryptionOracle implements ConsistentKeyEncryptionOracle {
 
-    private final byte[] key = new byte[Utils.AES_128_BLOCK_SIZE_IN_BYTES];
+    private final byte[] key;
     private final Aes128EcbPkcs7Cipher aes128EcbPkcs7Cipher;
     private final byte[] appendedBytes;
 
     public AppendingConsistentKeyEncryptionOracle(Aes128EcbPkcs7Cipher aes128EcbPkcs7Cipher, byte[] appendedBytes) {
         this.aes128EcbPkcs7Cipher = aes128EcbPkcs7Cipher;
-        new SecureRandom().nextBytes(key);
+        this.key = Utils.randomBytes(Utils.AES_128_BLOCK_SIZE_IN_BYTES);
         this.appendedBytes = appendedBytes;
     }
 

@@ -4,7 +4,6 @@ import cryptopals.ciphers.Aes128CbcPkcs7Cipher;
 import cryptopals.ciphers.Aes128EcbPkcs7Cipher;
 import lombok.RequiredArgsConstructor;
 
-import java.security.SecureRandom;
 import java.util.Map;
 import java.util.Random;
 
@@ -16,7 +15,7 @@ public class Challenge11EncryptEcbOrCbc {
     private final Aes128EcbPkcs7Cipher aes128EcbPkcs7Cipher;
     private final Aes128CbcPkcs7Cipher aes128CbcPkcs7Cipher;
 
-    private static final Random random = new SecureRandom();
+    private static final Random random = Utils.SECURE_RANDOM;
 
     public Map.Entry<String, byte[]> encryptEcbOrCbc(byte[] input) {
         var newInput = prependAndAppendBytes(input);

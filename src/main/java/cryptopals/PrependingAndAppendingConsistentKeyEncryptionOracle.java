@@ -2,11 +2,9 @@ package cryptopals;
 
 import cryptopals.ciphers.Aes128EcbPkcs7Cipher;
 
-import java.security.SecureRandom;
-
 public class PrependingAndAppendingConsistentKeyEncryptionOracle implements ConsistentKeyEncryptionOracle {
 
-    private final byte[] key = new byte[Utils.AES_128_BLOCK_SIZE_IN_BYTES];
+    private final byte[] key;
     private final Aes128EcbPkcs7Cipher aes128EcbPkcs7Cipher;
     private final byte[] appendedBytes;
     private final byte[] prependedBytes;
@@ -14,11 +12,9 @@ public class PrependingAndAppendingConsistentKeyEncryptionOracle implements Cons
     public PrependingAndAppendingConsistentKeyEncryptionOracle(Aes128EcbPkcs7Cipher aes128EcbPkcs7Cipher, byte[] appendedBytes,
                                                                int prependedBytesNumber) {
         this.aes128EcbPkcs7Cipher = aes128EcbPkcs7Cipher;
-        var random = new SecureRandom();
-        random.nextBytes(key);
+        this.key = Utils.randomBytes(Utils.AES_128_BLOCK_SIZE_IN_BYTES);
         this.appendedBytes = appendedBytes;
-        this.prependedBytes = new byte[prependedBytesNumber];
-        random.nextBytes(prependedBytes);
+        this.prependedBytes = Utils.randomBytes(prependedBytesNumber);
     }
 
     @Override
