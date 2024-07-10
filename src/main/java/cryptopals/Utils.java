@@ -136,4 +136,17 @@ public class Utils {
         SECURE_RANDOM.nextBytes(bytes);
         return bytes;
     }
+
+    public static boolean isASCII(byte[] bytes) {
+        for (int i = 0; i < bytes.length; ++i) {
+            if (!isASCII(bytes[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isASCII(byte b) {
+        return 0 <= b && b <= 127;
+    }
 }
