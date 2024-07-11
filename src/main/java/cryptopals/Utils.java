@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class Utils {
@@ -148,5 +149,13 @@ public class Utils {
 
     public static boolean isASCII(byte b) {
         return 0 <= b && b <= 127;
+    }
+
+    public static String toHex(int[] in) {
+        var format = HexFormat.of();
+
+        return Arrays.stream(in)
+                .mapToObj(format::toHexDigits)
+                .collect(Collectors.joining());
     }
 }
