@@ -4,6 +4,7 @@ import cryptopals.ciphers.Aes128EcbNoPaddingCipher;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
@@ -132,6 +133,22 @@ public class Utils {
         return sb.toString();
     }
 
+    public static String singleBlockHexString(byte[] buffer, int offset, int blockSize) {
+        var sb = new StringBuilder("[");
+
+        HexFormat.of().formatHex(sb, buffer, offset, Math.min(buffer.length, offset + blockSize));
+
+        if (buffer.length < offset + blockSize) {
+            var rest = (buffer.length - offset) % blockSize;
+            var pad = blockSize - rest;
+            sb.append("_".repeat(Math.max(0, pad)));
+        }
+
+        sb.append("]");
+
+        return sb.toString();
+    }
+
     public static byte[] randomBytes(int length) {
         var bytes = new byte[length];
         SECURE_RANDOM.nextBytes(bytes);
@@ -157,5 +174,13 @@ public class Utils {
         return Arrays.stream(in)
                 .mapToObj(format::toHexDigits)
                 .collect(Collectors.joining());
+    }
+
+    public static byte[] concat(byte[]... in) {
+        var length = Arrays.stream(in).mapToInt(i -> i.length).sum();
+
+        var byteBuffer = ByteBuffer.allocate(length);
+        Arrays.stream(in).forEach(byteBuffer::put);
+        return byteBuffer.array();
     }
 }

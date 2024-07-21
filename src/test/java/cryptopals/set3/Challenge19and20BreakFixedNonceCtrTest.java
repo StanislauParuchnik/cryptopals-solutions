@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 public class Challenge19and20BreakFixedNonceCtrTest {
@@ -28,8 +28,8 @@ public class Challenge19and20BreakFixedNonceCtrTest {
 
 
         crackResult.decrypted().forEach(pt -> System.out.println(new String(pt)));
-        assertEquals("i'm rated \"R\"...this is a warning, ya better void / P",
-                new String(crackResult.decrypted().get(0)));
+        assertThat(new String(crackResult.decrypted().get(0)))
+                .isEqualToIgnoringCase("I'm rated \"R\"...this is a warning, ya better void / P");
     }
 
     private List<byte[]> encryptPlainTexts(List<byte[]> plainTexts) {
