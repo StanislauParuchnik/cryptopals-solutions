@@ -4,6 +4,7 @@ import cryptopals.ciphers.Aes128EcbNoPaddingCipher;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -182,5 +183,14 @@ public class Utils {
         var byteBuffer = ByteBuffer.allocate(length);
         Arrays.stream(in).forEach(byteBuffer::put);
         return byteBuffer.array();
+    }
+
+    public static BigInteger randomBigInteger(BigInteger upperLimit) {
+        BigInteger randomNumber;
+        do {
+            randomNumber = new BigInteger(upperLimit.bitLength(), Utils.SECURE_RANDOM);
+        } while (randomNumber.compareTo(upperLimit) >= 0);
+
+        return randomNumber;
     }
 }
