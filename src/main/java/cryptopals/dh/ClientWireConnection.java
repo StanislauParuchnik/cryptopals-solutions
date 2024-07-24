@@ -7,12 +7,12 @@ import java.util.concurrent.BlockingQueue;
 @RequiredArgsConstructor
 public class ClientWireConnection {
 
-    private final Client client;
-    private final Wire wire;
-    private final BlockingQueue<Packet> queue;
+    protected final Client client;
+    protected final Wire wire;
+    protected final BlockingQueue<Packet> queue;
 
     public static void connect(Client client, Wire wire) {
-        var queue = wire.connect(client);
+        var queue = wire.connect(client.getName());
         var connection = new ClientWireConnection(client, wire, queue);
         client.setConnection(connection);
     }
@@ -21,8 +21,12 @@ public class ClientWireConnection {
         return queue.take();
     }
 
-    boolean write(String destination, byte[] message) {
-        var packet = new Packet(client.getName(), destination, message);
+    Packet tryRead() throws InterruptedException {
+        return queue.poll();
+    }
+
+    boolean write(ProtocolHeader header, String destination, byte[] message) {
+        var packet = new Packet(header, client.getName(), destination, message);
         return wire.send(packet);
     }
 }

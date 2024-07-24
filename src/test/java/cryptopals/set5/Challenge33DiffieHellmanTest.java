@@ -1,9 +1,6 @@
 package cryptopals.set5;
 
-import cryptopals.dh.Client;
-import cryptopals.dh.ClientWireConnection;
-import cryptopals.dh.DiffieHellman;
-import cryptopals.dh.Wire;
+import cryptopals.dh.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -40,21 +37,23 @@ public class Challenge33DiffieHellmanTest {
 
 
     void testDH(BigInteger p, BigInteger g) throws InterruptedException {
-        var alice = new Client("Alice");
-        var bob = new Client("Bob");
+        var alice = ClientFactory.createClient("Alice");
+        var bob = ClientFactory.createClient("Bob");
         var wire = new Wire();
         ClientWireConnection.connect(alice, wire);
         ClientWireConnection.connect(bob, wire);
 
-        var aliceThread = DiffieHellman.DHInitiatorThread(alice, bob.getName(), p, g);
-        var bobThread = DiffieHellman.DHReceiverThread(bob, p, g);
+        alice.start();
+        bob.start();
 
-        aliceThread.start();
-        bobThread.start();
+        var dhCommand = DiffieHellman.initiateDHCommand(bob.getName(), p, g);
+        alice.runCommand(dhCommand);
 
-        aliceThread.join();
-        bobThread.join();
+        alice.subscribe(ProtocolHeader.DIFFIE_HELLMAN.name(), 5000);
+        bob.subscribe(ProtocolHeader.DIFFIE_HELLMAN.name(), 5000);
 
+        alice.stop();
+        bob.stop();
 
         assertTrue(alice.getDhKeyMap().containsKey(bob.getName()));
         assertTrue(bob.getDhKeyMap().containsKey(alice.getName()));

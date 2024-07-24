@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Data
 public class Packet {
+    private final ProtocolHeader header;
     private final String source;
     private final String destination;
     private final byte[] data;
