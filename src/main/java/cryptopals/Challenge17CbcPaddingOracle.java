@@ -9,8 +9,12 @@ public class Challenge17CbcPaddingOracle implements PaddingOracle {
     private final Aes128CbcPkcs7Cipher aes128CbcPkcs7Cipher;
 
     public Challenge17CbcPaddingOracle(Aes128CbcPkcs7Cipher aes128CbcPkcs7Cipher) {
+        this(aes128CbcPkcs7Cipher,  Utils.randomBytes(Utils.AES_128_BLOCK_SIZE_IN_BYTES));
+    }
+
+    public Challenge17CbcPaddingOracle(Aes128CbcPkcs7Cipher aes128CbcPkcs7Cipher, byte[] key) {
         this.aes128CbcPkcs7Cipher = aes128CbcPkcs7Cipher;
-        this.key = Utils.randomBytes(Utils.AES_128_BLOCK_SIZE_IN_BYTES);
+        this.key = key;
     }
 
 

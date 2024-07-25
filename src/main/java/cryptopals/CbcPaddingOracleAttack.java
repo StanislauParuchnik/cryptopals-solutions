@@ -25,6 +25,28 @@ public class CbcPaddingOracleAttack {
                     for (int cipherTextModifiedValue = 0; cipherTextModifiedValue < 256; ++cipherTextModifiedValue) {
                         modifiedEncrypted[modifiedEncryptedStartIdx + modifiedByteIdx] = (byte) cipherTextModifiedValue;
                         if (paddingOracle.isPaddingCorrect(iv, modifiedEncrypted, decryptedBlockStartIdx + Utils.AES_128_BLOCK_SIZE_IN_BYTES)) {
+                            if (modifiedByteIdx == Utils.AES_128_BLOCK_SIZE_IN_BYTES - 1) {
+                                //check edge case: if plain text block looks like xxxxxxxxxxxxxxxxxxxxxxxxxxxx02xx
+                                //(or xxxxxxxxxxxxxxxxxxxxxxxxxx0303xx, xxxxxxxxxxxxxxxxxxxxxxxx040404xx, etc.)
+                                //and our modified cipher text caused to decrypt to xxxxxxxxxxxxxxxxxxxxxxxxxxxx0202
+                                //which is correct padding - we have to keep looking until we find such cipher text that
+                                //block decrypts to xxxxxxxxxxxxxxxxxxxxxxxxxxxx0201
+
+                                //This can be easily checked by changing penultimate cipherText
+                                modifiedEncrypted[modifiedEncryptedStartIdx + modifiedByteIdx - 1] += 1;
+
+                                var paddingCorrect = paddingOracle.isPaddingCorrect(iv, modifiedEncrypted,
+                                        decryptedBlockStartIdx + Utils.AES_128_BLOCK_SIZE_IN_BYTES);
+                                //if padding is still correct it matters that no matter what the value of penultimate is,
+                                //it means that modified cipher text we just found caused to decrypt to
+                                //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx01, otherwise we have to keep looking
+                                if (!paddingCorrect) {
+                                    continue;
+                                }
+
+                                modifiedEncrypted[modifiedEncryptedStartIdx + modifiedByteIdx - 1] -= 1;
+
+                            }
                             var paddingByteValue = Utils.AES_128_BLOCK_SIZE_IN_BYTES - modifiedByteIdx;
 
                             var keyStreamByteValue = paddingByteValue ^ modifiedEncrypted[modifiedEncryptedStartIdx + modifiedByteIdx];
@@ -48,6 +70,17 @@ public class CbcPaddingOracleAttack {
             for (int cipherTextModifiedValue = 0; cipherTextModifiedValue < 256; ++cipherTextModifiedValue) {
                 modifiedIv[modifiedByteIdx] = (byte) cipherTextModifiedValue;
                 if (paddingOracle.isPaddingCorrect(modifiedIv, encrypted, Utils.AES_128_BLOCK_SIZE_IN_BYTES)) {
+                    if (modifiedByteIdx == Utils.AES_128_BLOCK_SIZE_IN_BYTES - 1) {
+                        //the same edge case check
+                        modifiedIv[modifiedByteIdx - 1] += 1;
+
+                        var paddingCorrect = paddingOracle.isPaddingCorrect(modifiedIv, encrypted, Utils.AES_128_BLOCK_SIZE_IN_BYTES);
+                        if (!paddingCorrect) {
+                            continue;
+                        }
+                        modifiedIv[modifiedByteIdx - 1] -= 1;
+                    }
+
                     var paddingByteValue = Utils.AES_128_BLOCK_SIZE_IN_BYTES - modifiedByteIdx;
 
                     var keyStreamByteValue = paddingByteValue ^ modifiedIv[modifiedByteIdx];
