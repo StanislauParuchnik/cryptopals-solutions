@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 @Slf4j
-public class DiffieHellman {
+public class ClientAlgorithms {
 
     public static Command initiateDHNegotiatedGroupCommand(String target, BigInteger p, BigInteger g) {
         return initiator -> {
@@ -443,7 +443,7 @@ public class DiffieHellman {
                 BigInteger initiatorToReceiverKey;
                 BigInteger receiverToInitiatorKey;
 
-                BigInteger pMinus1 =p.subtract(BigInteger.ONE);
+                BigInteger pMinus1 = p.subtract(BigInteger.ONE);
                 if (g.equals(BigInteger.ONE)) {
                     log.debug("Detected malicious g = 1");
                     //key = 1 for both parties because gB = (1 ** b) mod p = 1
@@ -483,6 +483,182 @@ public class DiffieHellman {
             @Override
             public ProtocolHeader getSupportedHeader() {
                 return ProtocolHeader.DIFFIE_HELLMAN;
+            }
+        };
+    }
+
+    public static Command registerSRPClient(String server, String userName, String password, BigInteger N, BigInteger g, BigInteger k) {
+        return client -> {
+            //here client will generate salt because according to wikipedia it's essentially the same as generating by server
+            var salt = Utils.randomBytes(30);
+            var xH = Utils.SHA256(salt, password.getBytes(StandardCharsets.UTF_8));
+            var x = new BigInteger(xH);
+
+            var v = g.modPow(x, N);
+
+            //Steve stores v and s, indexed by I
+            client.send(ProtocolHeader.SRP_REGISTER, server, userName.getBytes(StandardCharsets.UTF_8));
+            client.send(ProtocolHeader.SRP_REGISTER, server, salt);
+            client.send(ProtocolHeader.SRP_REGISTER, server, v.toByteArray());
+
+            log.info("Registered SRP client {} to server {}", client.getName(), server);
+
+            client.publish(ProtocolHeader.SRP_REGISTER.name(), server);
+        };
+    }
+
+    public static ProtocolHandler<Client> registerSRPServer(BigInteger N, BigInteger g, BigInteger k) {
+        return new ProtocolHandler<>() {
+            @Override
+            public void handle(Client server, Packet packet) throws Exception {
+                var client = packet.getSource();
+                log.debug("Received SRP registration request from client {}", client);
+
+                var I = new String(packet.getData(), StandardCharsets.UTF_8);
+                log.debug("SRP registration from client {}: I={}", client, I);
+
+                packet = server.read();
+                validateSource(packet, client);
+                var s = packet.getData();
+                log.debug("SRP registration from client {}: s={}", client, s);
+
+                packet = server.read();
+                validateSource(packet, client);
+                var v = new BigInteger(packet.getData());
+                log.debug("SRP registration from client {}: v={}", client, v);
+
+                server.getSrpPasswordVerifier().put(I, new SrpPasswordVerifierParams(s, v));
+                log.debug("SRP registration complete for client {}", client);
+
+                server.publish(ProtocolHeader.SRP_REGISTER.name(), client);
+            }
+
+            @Override
+            public ProtocolHeader getSupportedHeader() {
+                return ProtocolHeader.SRP_REGISTER;
+            }
+        };
+    }
+
+    public static Command authSRPClient(String server, String userName, String password, BigInteger N, BigInteger g, BigInteger k) {
+        return client -> {
+            client.send(ProtocolHeader.SRP, server, userName.getBytes(StandardCharsets.UTF_8));
+            log.debug("SRP: {} -> {}: I = {}", client.getName(), server, userName);
+
+            var a = Utils.randomBigInteger(N);
+            var A = g.modPow(a, N);
+            client.send(ProtocolHeader.SRP, server, A.toByteArray());
+            log.debug("SRP: {} -> {}: A = {}", client.getName(), server, A);
+
+            var packet = client.read();
+            validateSource(packet, server);
+            var s = packet.getData();
+            log.debug("SRP: Received s={}", s);
+
+            packet = client.read();
+            validateSource(packet, server);
+            var B = packet.getData();
+            log.debug("SRP: Received B={}", B);
+
+            var uH = Utils.SHA256(A.toByteArray(), B);
+            var u = new BigInteger(uH);
+
+            var xH = Utils.SHA256(s, password.getBytes(StandardCharsets.UTF_8));
+            var x = new BigInteger(xH);
+
+            //Generate S = (B - k * g**x)**(a + u * x) % N
+            var S = calculateSRPClientS(new BigInteger(B), k, g, x, a, u, N);
+            log.debug("Generated SRP shared key {} <-> {}: {}", client.getName(), server, S);
+
+            //Generate K = SHA256(S)
+            var K = Utils.SHA256(S.toByteArray());
+
+            //Send HMAC-SHA256(K, salt)
+            client.send(ProtocolHeader.SRP, server, Utils.hmacSHA256(K, s));
+
+            packet = client.read();
+            validateSource(packet, server);
+
+            if (packet.getData().length == 1 && packet.getData()[0] == 1) {
+                client.publish(ProtocolHeader.SRP.name(), server + ": OK");
+            } else {
+                client.publish(ProtocolHeader.SRP.name(), server + ": FAILED");
+            }
+        };
+
+
+    }
+
+    private static BigInteger calculateSRPClientS(BigInteger B, BigInteger k, BigInteger g, BigInteger x,
+                                                  BigInteger a, BigInteger u, BigInteger N) {
+        //Generate S = (B - k * g**x)**(a + u * x) % N
+
+        BigInteger S = g.modPow(x, N);
+        S = k.multiply(S).mod(N);
+        S = B.subtract(S);
+
+        S = S.modPow(a.add(u.multiply(x)), N);
+
+        return S;
+    }
+
+    public static ProtocolHandler<Client> authSRPClientServerHandler(BigInteger N, BigInteger g, BigInteger k) {
+        return new ProtocolHandler<>() {
+            @Override
+            public void handle(Client server, Packet packet) throws Exception {
+                //read I, read A
+                var client = packet.getSource();
+                var userName = new String(packet.getData());
+                log.debug("SRP auth from {}: received userName={}", client, userName);
+
+                packet = server.read();
+                validateSource(packet, client);
+                var A = new BigInteger(packet.getData());
+                log.debug("SRP auth from {}: received A={}", client, A);
+
+                //Send salt,
+                var srpPasswordParams = server.getSrpPasswordVerifier().get(userName);
+                var s = srpPasswordParams.getS();
+                var v = srpPasswordParams.getV();
+
+                server.send(ProtocolHeader.SRP, client, s);
+                log.debug("SRP auth from {}: send s={}", client, s);
+
+                //B=kv + g**b % N
+                var b = Utils.randomBigInteger(N);
+                var B = (k.multiply(v).add(g.modPow(b, N))).mod(N);
+                server.send(ProtocolHeader.SRP, client, B.toByteArray());
+                log.debug("SRP auth from {}: send B={}", client, B);
+
+                var uH = Utils.SHA256(A.toByteArray(), B.toByteArray());
+                var u = new BigInteger(uH);
+
+                var S = A.multiply(v.modPow(u, N)).modPow(b, N);
+                log.debug("Generated SRP shared key {} <-> {}: {}", client, server.getName(), S);
+                var K = Utils.SHA256(S.toByteArray());
+
+                packet = server.read();
+                validateSource(packet, client);
+
+                var clientHmac = packet.getData();
+
+                //HMAC-SHA256(K, salt)
+                var hmac = Utils.hmacSHA256(K, s);
+
+                if (Arrays.equals(clientHmac, hmac)) {
+                    log.debug("SRP auth validated for client {}", client);
+                    server.send(ProtocolHeader.SRP, client, new byte[]{1});
+                    server.publish(ProtocolHeader.SRP.name(), client + ": OK");
+                } else {
+                    log.debug("SRP auth is invalid for client {}", client);
+                    server.send(ProtocolHeader.SRP, client, new byte[]{0});
+                    server.publish(ProtocolHeader.SRP.name(), client + ": FAILED");
+                }
+            }
+
+            @Override
+            public ProtocolHeader getSupportedHeader() {
+                return ProtocolHeader.SRP;
             }
         };
     }

@@ -26,10 +26,10 @@ public class Challenge34MiTMKeyFixingAttackTest {
     void testEcho() throws InterruptedException {
         var message = "Hello there!";
         var alice = ClientFactory.createClient("Alice");
-        alice.addProtocolHandler(DiffieHellman.printEncryptedMessage());
+        alice.addProtocolHandler(ClientAlgorithms.printEncryptedMessage());
 
         var bob = ClientFactory.createClient("Bob");
-        bob.addProtocolHandler(DiffieHellman.echoEncryptedMessage());
+        bob.addProtocolHandler(ClientAlgorithms.echoEncryptedMessage());
 
         var wire = new Wire();
         ClientWireConnection.connect(alice, wire);
@@ -39,10 +39,10 @@ public class Challenge34MiTMKeyFixingAttackTest {
         alice.start();
         bob.start();
 
-        var dhCommand = DiffieHellman.initiateDHNegotiatedGroupCommand(bob.getName(), p, g);
+        var dhCommand = ClientAlgorithms.initiateDHNegotiatedGroupCommand(bob.getName(), p, g);
         alice.runCommand(dhCommand);
 
-        var sendMessageCommand = DiffieHellman.sendEncryptedMessage(bob.getName(), message);
+        var sendMessageCommand = ClientAlgorithms.sendEncryptedMessage(bob.getName(), message);
         alice.runCommand(sendMessageCommand);
 
         var receivedMessage = (String) bob.subscribe(ProtocolHeader.ENCRYPTED_MESSAGE.name(), 5000);
@@ -61,18 +61,18 @@ public class Challenge34MiTMKeyFixingAttackTest {
         var message = "Hello there!";
 
         var alice = ClientFactory.createClient("Alice");
-        alice.addProtocolHandler(DiffieHellman.printEncryptedMessage());
+        alice.addProtocolHandler(ClientAlgorithms.printEncryptedMessage());
 
         var bob = ClientFactory.createClient("Bob");
-        bob.addProtocolHandler(DiffieHellman.echoEncryptedMessage());
+        bob.addProtocolHandler(ClientAlgorithms.echoEncryptedMessage());
 
         var wire = new Wire();
         ClientWireConnection.connect(alice, wire);
         ClientWireConnection.connect(bob, wire);
 
         var mallory = new MitmClient("Mallory");
-        mallory.addMitmProtocolHandler(DiffieHellman.mitmKeyFixingDHProtocolHandler());
-        mallory.addMitmProtocolHandler(DiffieHellman.mitmSniffEncryptedMessageHandler());
+        mallory.addMitmProtocolHandler(ClientAlgorithms.mitmKeyFixingDHProtocolHandler());
+        mallory.addMitmProtocolHandler(ClientAlgorithms.mitmSniffEncryptedMessageHandler());
 
 
         MitmClientWireConnection.connect(mallory, wire);
@@ -81,10 +81,10 @@ public class Challenge34MiTMKeyFixingAttackTest {
         bob.start();
         mallory.start();
 
-        var dhCommand = DiffieHellman.initiateDHNegotiatedGroupCommand(bob.getName(), p, g);
+        var dhCommand = ClientAlgorithms.initiateDHNegotiatedGroupCommand(bob.getName(), p, g);
         alice.runCommand(dhCommand);
 
-        var sendMessageCommand = DiffieHellman.sendEncryptedMessage(bob.getName(), message);
+        var sendMessageCommand = ClientAlgorithms.sendEncryptedMessage(bob.getName(), message);
         alice.runCommand(sendMessageCommand);
 
 
@@ -108,18 +108,18 @@ public class Challenge34MiTMKeyFixingAttackTest {
         var message = "Hello there!";
 
         var alice = ClientFactory.createClient("Alice");
-        alice.addProtocolHandler(DiffieHellman.printEncryptedMessage());
+        alice.addProtocolHandler(ClientAlgorithms.printEncryptedMessage());
 
         var bob = ClientFactory.createClient("Bob");
-        bob.addProtocolHandler(DiffieHellman.echoEncryptedMessage());
+        bob.addProtocolHandler(ClientAlgorithms.echoEncryptedMessage());
 
         var wire = new Wire();
         ClientWireConnection.connect(alice, wire);
         ClientWireConnection.connect(bob, wire);
 
         var mallory = new MitmClient("Mallory");
-        mallory.addMitmProtocolHandler(DiffieHellman.mitmClassicDHProtocolHandler());
-        mallory.addMitmProtocolHandler(DiffieHellman.mitmSniffEncryptedMessageHandler());
+        mallory.addMitmProtocolHandler(ClientAlgorithms.mitmClassicDHProtocolHandler());
+        mallory.addMitmProtocolHandler(ClientAlgorithms.mitmSniffEncryptedMessageHandler());
 
         MitmClientWireConnection.connect(mallory, wire);
 
@@ -127,10 +127,10 @@ public class Challenge34MiTMKeyFixingAttackTest {
         bob.start();
         mallory.start();
 
-        var dhCommand = DiffieHellman.initiateDHNegotiatedGroupCommand(bob.getName(), p, g);
+        var dhCommand = ClientAlgorithms.initiateDHNegotiatedGroupCommand(bob.getName(), p, g);
         alice.runCommand(dhCommand);
 
-        var sendMessageCommand = DiffieHellman.sendEncryptedMessage(bob.getName(), message);
+        var sendMessageCommand = ClientAlgorithms.sendEncryptedMessage(bob.getName(), message);
         alice.runCommand(sendMessageCommand);
 
 

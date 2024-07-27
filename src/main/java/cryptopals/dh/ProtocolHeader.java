@@ -2,5 +2,7 @@ package cryptopals.dh;
 
 public enum ProtocolHeader {
     DIFFIE_HELLMAN,
-    ENCRYPTED_MESSAGE
+    ENCRYPTED_MESSAGE,
+    SRP_REGISTER,
+    SRP
 }

@@ -29,18 +29,18 @@ public class Challenge35DHMaliciousGParamTest {
         var message = "Hello there!";
 
         var alice = ClientFactory.createClient("Alice");
-        alice.addProtocolHandler(DiffieHellman.printEncryptedMessage());
+        alice.addProtocolHandler(ClientAlgorithms.printEncryptedMessage());
 
         var bob = ClientFactory.createClient("Bob");
-        bob.addProtocolHandler(DiffieHellman.echoEncryptedMessage());
+        bob.addProtocolHandler(ClientAlgorithms.echoEncryptedMessage());
 
         var wire = new Wire();
         ClientWireConnection.connect(alice, wire);
         ClientWireConnection.connect(bob, wire);
 
         var mallory = new MitmClient("Mallory");
-        mallory.addMitmProtocolHandler(DiffieHellman.mitmDHMaliciousGProtocolHandler());
-        mallory.addMitmProtocolHandler(DiffieHellman.mitmSniffEncryptedMessageHandler());
+        mallory.addMitmProtocolHandler(ClientAlgorithms.mitmDHMaliciousGProtocolHandler());
+        mallory.addMitmProtocolHandler(ClientAlgorithms.mitmSniffEncryptedMessageHandler());
 
         MitmClientWireConnection.connect(mallory, wire);
 
@@ -48,10 +48,10 @@ public class Challenge35DHMaliciousGParamTest {
         bob.start();
         mallory.start();
 
-        var dhCommand = DiffieHellman.initiateDHNegotiatedGroupCommand(bob.getName(), p, g);
+        var dhCommand = ClientAlgorithms.initiateDHNegotiatedGroupCommand(bob.getName(), p, g);
         alice.runCommand(dhCommand);
 
-        var sendMessageCommand = DiffieHellman.sendEncryptedMessage(bob.getName(), message);
+        var sendMessageCommand = ClientAlgorithms.sendEncryptedMessage(bob.getName(), message);
         alice.runCommand(sendMessageCommand);
 
 

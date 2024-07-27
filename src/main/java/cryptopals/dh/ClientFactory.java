@@ -4,7 +4,7 @@ public class ClientFactory {
 
     public static Client createClient(String name) {
         var client = new Client(name);
-        client.addProtocolHandler(DiffieHellman.dhNegotiatedGroupProtocolHandler());
+        client.addProtocolHandler(ClientAlgorithms.dhNegotiatedGroupProtocolHandler());
 
         return client;
     }

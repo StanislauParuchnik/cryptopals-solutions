@@ -3,11 +3,16 @@ package cryptopals;
 import cryptopals.ciphers.Aes128EcbNoPaddingCipher;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
@@ -192,5 +197,24 @@ public class Utils {
         } while (randomNumber.compareTo(upperLimit) >= 0);
 
         return randomNumber;
+    }
+
+    public static byte[] SHA256(byte[] input1, byte[] input2) throws NoSuchAlgorithmException {
+        var md = MessageDigest.getInstance("SHA-256");
+        md.update(input1);
+        md.update(input2);
+        return md.digest();
+    }
+
+    public static byte[] SHA256(byte[] input) throws NoSuchAlgorithmException {
+        var md = MessageDigest.getInstance("SHA-256");
+        md.update(input);
+        return md.digest();
+    }
+
+    public static byte[] hmacSHA256(byte[] key, byte[] input) throws NoSuchAlgorithmException, InvalidKeyException {
+        Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
+        sha256_HMAC.init(new SecretKeySpec(key, "HmacSHA256"));
+        return sha256_HMAC.doFinal(input);
     }
 }

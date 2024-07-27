@@ -29,6 +29,9 @@ public class Client {
     @Getter
     protected final Map<String, BigInteger> dhKeyMap = new HashMap<>();
 
+    @Getter
+    protected final Map<String, SrpPasswordVerifierParams> srpPasswordVerifier = new HashMap<>();
+
     private final ConcurrentMap<String, BlockingQueue<Object>> dataMap = new ConcurrentHashMap<>();
 
     public void send(ProtocolHeader protocol, String destination, byte[] message) {
