@@ -12,7 +12,7 @@ import java.util.Arrays;
 @Slf4j
 public class DiffieHellman {
 
-    public static Command initiateDHCommand(String target, BigInteger p, BigInteger g) {
+    public static Command initiateDHNegotiatedGroupCommand(String target, BigInteger p, BigInteger g) {
         return initiator -> {
             var a = Utils.randomBigInteger(p);
             log.debug("Generated a");
@@ -25,10 +25,19 @@ public class DiffieHellman {
             log.debug("Sent p to {}", target);
             initiator.send(ProtocolHeader.DIFFIE_HELLMAN, target, g.toByteArray());
             log.debug("Sent g to {}", target);
+
+            var packet = initiator.read();
+            validateSource(packet, target);
+            if (packet.getData().length != 1 && packet.getData()[0] != 1) {
+                log.debug("ACK not received from {}", target);
+                throw new RuntimeException("ACK not received from " + target);
+            }
+
             initiator.send(ProtocolHeader.DIFFIE_HELLMAN, target, gA.toByteArray());
             log.debug("Sent gA to {}", target);
 
-            var packet = initiator.read();
+
+            packet = initiator.read();
             validateSource(packet, target);
 
             var gB = new BigInteger(packet.getData());
@@ -42,7 +51,7 @@ public class DiffieHellman {
         };
     }
 
-    public static ProtocolHandler<Client> dhProtocolHandler() {
+    public static ProtocolHandler<Client> dhNegotiatedGroupProtocolHandler() {
         return new ProtocolHandler<>() {
             @Override
             public void handle(Client receiver, Packet packet) throws Exception {
@@ -54,6 +63,9 @@ public class DiffieHellman {
                 validateSource(packet, initiator);
                 var g = new BigInteger(packet.getData());
                 log.debug("Received g from {}", initiator);
+
+                receiver.send(ProtocolHeader.DIFFIE_HELLMAN, initiator, new byte[]{1});
+                log.debug("Sent ACK to {}", initiator);
 
                 packet = receiver.read();
                 validateSource(packet, initiator);
@@ -117,6 +129,16 @@ public class DiffieHellman {
                 mitmClient.forward(packet);
                 log.debug("Relayed g to {}", receiver);
 
+                packet = mitmClient.read();
+                validateSource(packet, receiver);
+                validateDestination(packet, initiator);
+                if (packet.getData().length != 1 && packet.getData()[0] != 1) {
+                    log.info("ACK not received from {}", receiver);
+                    return;
+                }
+                mitmClient.forward(packet);
+                log.debug("Relayed ACK to {}", initiator);
+
 
                 packet = mitmClient.read();
                 validateSource(packet, initiator);
@@ -164,6 +186,16 @@ public class DiffieHellman {
                 log.debug("Received g from {}", initiator);
                 mitmClient.forward(packet);
                 log.debug("Relayed g to {}", receiver);
+
+                packet = mitmClient.read();
+                validateSource(packet, receiver);
+                validateDestination(packet, initiator);
+                if (packet.getData().length != 1 && packet.getData()[0] != 1) {
+                    log.info("ACK not received from {}", receiver);
+                    return;
+                }
+                mitmClient.forward(packet);
+                log.debug("Relayed ACK to {}", initiator);
 
 
                 packet = mitmClient.read();
@@ -353,6 +385,104 @@ public class DiffieHellman {
             @Override
             public ProtocolHeader getSupportedHeader() {
                 return ProtocolHeader.ENCRYPTED_MESSAGE;
+            }
+        };
+    }
+
+    public static ProtocolHandler<MitmClient> mitmDHMaliciousGProtocolHandler() {
+        return new ProtocolHandler<>() {
+            @Override
+            public void handle(MitmClient mitmClient, Packet packet) throws Exception {
+                var initiator = packet.getSource();
+                var receiver = packet.getDestination();
+
+                var p = new BigInteger(packet.getData());
+                log.debug("Received p from {}", initiator);
+                mitmClient.forward(packet);
+                log.debug("Relayed p to {}", receiver);
+
+
+                packet = mitmClient.read();
+                //of course in reality man in the middle doesn't throw :)
+                validateSource(packet, initiator);
+                validateDestination(packet, receiver);
+                var g = new BigInteger(packet.getData());
+                log.debug("Received g from {}", initiator);
+                mitmClient.forward(packet);
+                log.debug("Relayed g to {}", receiver);
+
+                packet = mitmClient.read();
+                validateSource(packet, receiver);
+                validateDestination(packet, initiator);
+                if (packet.getData().length != 1 && packet.getData()[0] != 1) {
+                    log.info("ACK not received from {}", receiver);
+                    return;
+                }
+                mitmClient.forward(packet);
+                log.debug("Relayed ACK to {}", initiator);
+
+
+                packet = mitmClient.read();
+                validateSource(packet, initiator);
+                validateDestination(packet, receiver);
+                var gA = new BigInteger(packet.getData());
+                log.debug("Received gA from {}", initiator);
+                mitmClient.forward(packet);
+                log.debug("Relayed gA to {}", receiver);
+
+                packet = mitmClient.read();
+                validateSource(packet, receiver);
+                validateDestination(packet, initiator);
+                var gB = new BigInteger(packet.getData());
+                log.debug("Received gB from {}", receiver);
+
+                mitmClient.forward(packet);
+                log.debug("Relayed gB to {}", initiator);
+
+
+                BigInteger initiatorToReceiverKey;
+                BigInteger receiverToInitiatorKey;
+
+                BigInteger pMinus1 =p.subtract(BigInteger.ONE);
+                if (g.equals(BigInteger.ONE)) {
+                    log.debug("Detected malicious g = 1");
+                    //key = 1 for both parties because gB = (1 ** b) mod p = 1
+                    initiatorToReceiverKey = BigInteger.ONE;
+                    receiverToInitiatorKey = BigInteger.ONE;
+                } else if (g.equals(p)) {
+                    log.debug("Detected malicious g = p");
+                    //key = 0 for both parties because g = 0 mod p and 0 to any power is zero
+                    initiatorToReceiverKey = BigInteger.ZERO;
+                    receiverToInitiatorKey = BigInteger.ZERO;
+                } else if (g.equals(pMinus1)) {
+                    //g = p-1 mod p = (-1) mod p, so shared key is either 1 or p-1 depending on parity of a and b
+
+                    boolean aIsEven = gA.equals(BigInteger.ONE);
+                    boolean bIsEven = gB.equals(BigInteger.ONE);
+
+                    if (aIsEven || bIsEven) {
+                        //key = (-1) ** (a*b) mod p = (-1) ** (even power) pod p = 1
+                        initiatorToReceiverKey = BigInteger.ONE;
+                        receiverToInitiatorKey = BigInteger.ONE;
+                    } else {
+                        //key = (-1) ** (a*b) mod p = (-1) ** (odd power) pod p = (-1) mod p = p - 1
+                        initiatorToReceiverKey = pMinus1;
+                        receiverToInitiatorKey = pMinus1;
+                    }
+                } else {
+                    log.info("Unknown malicious g param, won't generate keys");
+                    return;
+                }
+
+                log.debug("Generated shared key {} <-> {} ({}): {}", initiator, mitmClient.getName(), receiver, initiatorToReceiverKey);
+                log.debug("Generated shared key {} <-> {} ({}): {}", receiver, mitmClient.getName(), initiator, receiverToInitiatorKey);
+
+                mitmClient.putMiTMDhKey(initiator, receiver, initiatorToReceiverKey, receiverToInitiatorKey);
+            }
+
+            @Override
+            public ProtocolHeader getSupportedHeader() {
+                return ProtocolHeader.DIFFIE_HELLMAN;
             }
         };
     }

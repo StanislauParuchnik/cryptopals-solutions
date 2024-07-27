@@ -46,7 +46,7 @@ public class Challenge33DiffieHellmanTest {
         alice.start();
         bob.start();
 
-        var dhCommand = DiffieHellman.initiateDHCommand(bob.getName(), p, g);
+        var dhCommand = DiffieHellman.initiateDHNegotiatedGroupCommand(bob.getName(), p, g);
         alice.runCommand(dhCommand);
 
         alice.subscribe(ProtocolHeader.DIFFIE_HELLMAN.name(), 5000);

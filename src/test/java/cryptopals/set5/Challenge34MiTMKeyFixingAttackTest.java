@@ -39,7 +39,7 @@ public class Challenge34MiTMKeyFixingAttackTest {
         alice.start();
         bob.start();
 
-        var dhCommand = DiffieHellman.initiateDHCommand(bob.getName(), p, g);
+        var dhCommand = DiffieHellman.initiateDHNegotiatedGroupCommand(bob.getName(), p, g);
         alice.runCommand(dhCommand);
 
         var sendMessageCommand = DiffieHellman.sendEncryptedMessage(bob.getName(), message);
@@ -81,7 +81,7 @@ public class Challenge34MiTMKeyFixingAttackTest {
         bob.start();
         mallory.start();
 
-        var dhCommand = DiffieHellman.initiateDHCommand(bob.getName(), p, g);
+        var dhCommand = DiffieHellman.initiateDHNegotiatedGroupCommand(bob.getName(), p, g);
         alice.runCommand(dhCommand);
 
         var sendMessageCommand = DiffieHellman.sendEncryptedMessage(bob.getName(), message);
@@ -127,7 +127,7 @@ public class Challenge34MiTMKeyFixingAttackTest {
         bob.start();
         mallory.start();
 
-        var dhCommand = DiffieHellman.initiateDHCommand(bob.getName(), p, g);
+        var dhCommand = DiffieHellman.initiateDHNegotiatedGroupCommand(bob.getName(), p, g);
         alice.runCommand(dhCommand);
 
         var sendMessageCommand = DiffieHellman.sendEncryptedMessage(bob.getName(), message);
