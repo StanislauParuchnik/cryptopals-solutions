@@ -530,7 +530,7 @@ public class ClientAlgorithms {
                 server.getSrpPasswordVerifier().put(I, new SrpPasswordVerifierParams(s, v));
                 log.debug("SRP registration complete for client {}", client);
 
-                server.publish(ProtocolHeader.SRP_REGISTER.name(), client);
+                server.publish(ProtocolHeader.SRP_REGISTER.name(), I);
             }
 
             @Override
@@ -585,8 +585,6 @@ public class ClientAlgorithms {
                 client.publish(ProtocolHeader.SRP.name(), server + ": FAILED");
             }
         };
-
-
     }
 
     private static BigInteger calculateSRPClientS(BigInteger B, BigInteger k, BigInteger g, BigInteger x,
@@ -659,6 +657,48 @@ public class ClientAlgorithms {
             @Override
             public ProtocolHeader getSupportedHeader() {
                 return ProtocolHeader.SRP;
+            }
+        };
+    }
+
+    //to prevent this attack server must validate that A mod N != 0
+    public static Command authSRPClientBypassZeroKey(String server, String userName, int multiplier, BigInteger N, BigInteger g, BigInteger k) {
+        return client -> {
+            client.send(ProtocolHeader.SRP, server, userName.getBytes(StandardCharsets.UTF_8));
+            log.debug("SRP: {} -> {}: I = {}", client.getName(), server, userName);
+
+            var A = N.multiply(BigInteger.valueOf(multiplier));
+            client.send(ProtocolHeader.SRP, server, A.toByteArray());
+            log.debug("SRP: {} -> {}: A = {}", client.getName(), server, A);
+
+            var packet = client.read();
+            validateSource(packet, server);
+            var s = packet.getData();
+            log.debug("SRP: Received s={}", s);
+
+            packet = client.read();
+            validateSource(packet, server);
+            var B = packet.getData();
+            log.debug("SRP: Received B={}", B);
+
+
+            //Generate S = (B - k * g**x)**(a + u * x) % N
+            var S = BigInteger.ZERO;
+            log.debug("Generated SRP shared key {} <-> {}: {}", client.getName(), server, S);
+
+            //Generate K = SHA256(S)
+            var K = Utils.SHA256(S.toByteArray());
+
+            //Send HMAC-SHA256(K, salt)
+            client.send(ProtocolHeader.SRP, server, Utils.hmacSHA256(K, s));
+
+            packet = client.read();
+            validateSource(packet, server);
+
+            if (packet.getData().length == 1 && packet.getData()[0] == 1) {
+                client.publish(ProtocolHeader.SRP.name(), server + ": OK");
+            } else {
+                client.publish(ProtocolHeader.SRP.name(), server + ": FAILED");
             }
         };
     }
