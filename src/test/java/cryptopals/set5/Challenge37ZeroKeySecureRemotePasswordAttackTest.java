@@ -27,13 +27,13 @@ public class Challenge37ZeroKeySecureRemotePasswordAttackTest {
 
     @ParameterizedTest
     @ValueSource(ints = {0, 1, 2, 3, 4})
-    void testSRPAuthByPassWithZeroKey(int nMultiple) throws Exception {
+    void testSRPAuthBypassWithZeroKey(int nMultiple) throws Exception {
         var srpClient = new Client("Carol");
         var userName = "carol@mymail.com";
         var password = "carolBestPassword";
 
         var srpServer = new Client("Steeve");
-        srpServer.addProtocolHandler(ClientAlgorithms.registerSRPServer(p, g, k));
+        srpServer.addProtocolHandler(ClientAlgorithms.registerSRPServer());
         srpServer.addProtocolHandler(ClientAlgorithms.authSRPClientServerHandler(p, g, k));
 
         var mallory = new Client("Mallory");
@@ -48,12 +48,12 @@ public class Challenge37ZeroKeySecureRemotePasswordAttackTest {
         srpClient.start();
         mallory.start();
 
-        srpClient.runCommand(ClientAlgorithms.registerSRPClient(srpServer.getName(), userName, password, p, g, k));
+        srpClient.runCommand(ClientAlgorithms.registerSRPClient(srpServer.getName(), userName, password, p, g));
         var registeredUser = srpServer.subscribe(ProtocolHeader.SRP_REGISTER.name(), 1000);
 
         System.out.println();
 
-        mallory.runCommand(ClientAlgorithms.authSRPClientBypassZeroKey(srpServer.getName(), userName, nMultiple, p, g, k));
+        mallory.runCommand(ClientAlgorithms.authSRPClientBypassZeroKey(srpServer.getName(), userName, nMultiple, p));
 
         var malloryAuthValue = mallory.subscribe(ProtocolHeader.SRP.name(), 5000);
         var serverAuthValue = srpServer.subscribe(ProtocolHeader.SRP.name(), 5000);

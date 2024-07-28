@@ -7,7 +7,14 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
 @Slf4j
 public class ClientAlgorithms {
@@ -255,7 +262,7 @@ public class ClientAlgorithms {
     public static ProtocolHandler<Client> echoEncryptedMessage() {
         return new ProtocolHandler<>() {
             @Override
-            public void handle(Client receiver, Packet packet) throws Exception {
+            public void handle(Client receiver, Packet packet) {
                 var source = packet.getSource();
                 var encryptedMessageAndIv = packet.getData();
 
@@ -296,7 +303,7 @@ public class ClientAlgorithms {
     public static ProtocolHandler<Client> printEncryptedMessage() {
         return new ProtocolHandler<>() {
             @Override
-            public void handle(Client receiver, Packet packet) throws Exception {
+            public void handle(Client receiver, Packet packet) {
                 var source = packet.getSource();
                 var encryptedMessageAndIv = packet.getData();
 
@@ -327,7 +334,7 @@ public class ClientAlgorithms {
     public static ProtocolHandler<MitmClient> mitmSniffEncryptedMessageHandler() {
         return new ProtocolHandler<>() {
             @Override
-            public void handle(MitmClient mitmClient, Packet packet) throws Exception {
+            public void handle(MitmClient mitmClient, Packet packet) {
                 log.debug("Received packet {}", packet);
 
                 var source = packet.getSource();
@@ -487,7 +494,7 @@ public class ClientAlgorithms {
         };
     }
 
-    public static Command registerSRPClient(String server, String userName, String password, BigInteger N, BigInteger g, BigInteger k) {
+    public static Command registerSRPClient(String server, String userName, String password, BigInteger N, BigInteger g) {
         return client -> {
             //here client will generate salt because according to wikipedia it's essentially the same as generating by server
             var salt = Utils.randomBytes(30);
@@ -507,7 +514,7 @@ public class ClientAlgorithms {
         };
     }
 
-    public static ProtocolHandler<Client> registerSRPServer(BigInteger N, BigInteger g, BigInteger k) {
+    public static ProtocolHandler<Client> registerSRPServer() {
         return new ProtocolHandler<>() {
             @Override
             public void handle(Client server, Packet packet) throws Exception {
@@ -662,7 +669,7 @@ public class ClientAlgorithms {
     }
 
     //to prevent this attack server must validate that A mod N != 0
-    public static Command authSRPClientBypassZeroKey(String server, String userName, int multiplier, BigInteger N, BigInteger g, BigInteger k) {
+    public static Command authSRPClientBypassZeroKey(String server, String userName, int multiplier, BigInteger N) {
         return client -> {
             client.send(ProtocolHeader.SRP, server, userName.getBytes(StandardCharsets.UTF_8));
             log.debug("SRP: {} -> {}: I = {}", client.getName(), server, userName);
@@ -699,6 +706,210 @@ public class ClientAlgorithms {
                 client.publish(ProtocolHeader.SRP.name(), server + ": OK");
             } else {
                 client.publish(ProtocolHeader.SRP.name(), server + ": FAILED");
+            }
+        };
+    }
+
+    public static Command authSimplifiedSRPClient(String server, String userName, String password, BigInteger N, BigInteger g) {
+        return client -> {
+            client.send(ProtocolHeader.SRP_SIMPLIFIED, server, userName.getBytes(StandardCharsets.UTF_8));
+            log.debug("SRP: {} -> {}: I = {}", client.getName(), server, userName);
+
+            var a = Utils.randomBigInteger(N);
+            var A = g.modPow(a, N);
+            client.send(ProtocolHeader.SRP_SIMPLIFIED, server, A.toByteArray());
+            log.debug("SRP: {} -> {}: A = {}", client.getName(), server, A);
+
+            var packet = client.read();
+            validateSource(packet, server);
+            var s = packet.getData();
+            log.debug("SRP: Received s={}", s);
+
+            packet = client.read();
+            validateSource(packet, server);
+            var B = new BigInteger(packet.getData());
+            log.debug("SRP: Received B={}", B);
+
+            packet = client.read();
+            validateSource(packet, server);
+            var u = new BigInteger(packet.getData());
+            log.debug("SRP: Received u={}", B);
+
+            var xH = Utils.SHA256(s, password.getBytes(StandardCharsets.UTF_8));
+            var x = new BigInteger(xH);
+
+            // S = B**(a + ux) % n
+            var S = B.modPow(a.add(u.multiply(x)), N);
+            log.debug("Generated SRP shared key {} <-> {}: {}", client.getName(), server, S);
+
+            //Generate K = SHA256(S)
+            var K = Utils.SHA256(S.toByteArray());
+
+            //Send HMAC-SHA256(K, salt)
+            client.send(ProtocolHeader.SRP_SIMPLIFIED, server, Utils.hmacSHA256(K, s));
+
+            packet = client.read();
+            validateSource(packet, server);
+
+            if (packet.getData().length == 1 && packet.getData()[0] == 1) {
+                client.publish(ProtocolHeader.SRP_SIMPLIFIED.name(), server + ": OK");
+            } else {
+                client.publish(ProtocolHeader.SRP_SIMPLIFIED.name(), server + ": FAILED");
+            }
+        };
+    }
+
+    public static ProtocolHandler<Client> authSimplifiedSRPClientServerHandler(BigInteger N, BigInteger g) {
+        return new ProtocolHandler<>() {
+            @Override
+            public void handle(Client server, Packet packet) throws Exception {
+                //read I, read A
+                var client = packet.getSource();
+                var userName = new String(packet.getData());
+                log.debug("SRP auth from {}: received userName={}", client, userName);
+
+                packet = server.read();
+                validateSource(packet, client);
+                var A = new BigInteger(packet.getData());
+                log.debug("SRP auth from {}: received A={}", client, A);
+
+
+                var srpPasswordParams = server.getSrpPasswordVerifier().get(userName);
+                var s = srpPasswordParams.getS();
+                var v = srpPasswordParams.getV();
+
+                //send s, B, u
+
+                server.send(ProtocolHeader.SRP_SIMPLIFIED, client, s);
+                log.debug("SRP auth from {}: send s={}", client, s);
+
+                //B=g**b % N
+                var b = Utils.randomBigInteger(N);
+                var B = g.modPow(b, N);
+                server.send(ProtocolHeader.SRP_SIMPLIFIED, client, B.toByteArray());
+                log.debug("SRP auth from {}: send B={}", client, B);
+
+                var u = new BigInteger(Utils.randomBytes(16)); //128-bit random number
+                server.send(ProtocolHeader.SRP_SIMPLIFIED, client, u.toByteArray());
+                log.debug("SRP auth from {}: send u={}", client, u);
+
+                //S = (A * v ** u)**b % n
+                var S = A.multiply(v.modPow(u, N)).modPow(b, N);
+                log.debug("Generated SRP shared key {} <-> {}: {}", client, server.getName(), S);
+                var K = Utils.SHA256(S.toByteArray());
+
+                packet = server.read();
+                validateSource(packet, client);
+
+                var clientHmac = packet.getData();
+
+                //HMAC-SHA256(K, salt)
+                var hmac = Utils.hmacSHA256(K, s);
+
+                if (Arrays.equals(clientHmac, hmac)) {
+                    log.debug("SRP auth validated for client {}", client);
+                    server.send(ProtocolHeader.SRP_SIMPLIFIED, client, new byte[]{1});
+                    server.publish(ProtocolHeader.SRP_SIMPLIFIED.name(), client + ": OK");
+                } else {
+                    log.debug("SRP auth is invalid for client {}", client);
+                    server.send(ProtocolHeader.SRP_SIMPLIFIED, client, new byte[]{0});
+                    server.publish(ProtocolHeader.SRP_SIMPLIFIED.name(), client + ": FAILED");
+                }
+            }
+
+            @Override
+            public ProtocolHeader getSupportedHeader() {
+                return ProtocolHeader.SRP_SIMPLIFIED;
+            }
+        };
+    }
+
+    public static ProtocolHandler<MitmClient> authSimplifiedSRPClientMitmDictionaryAttackHandler(BigInteger N, BigInteger g,
+                                                                                                 Path dictionaryPath) {
+        return new ProtocolHandler<>() {
+            @Override
+            public void handle(MitmClient mitm, Packet packet) throws Exception {
+                //read I, read A
+                var client = packet.getSource();
+                var server = packet.getDestination();
+                var userName = new String(packet.getData());
+                log.debug("SRP auth from {}: received userName={}", client, userName);
+
+                packet = mitm.read();
+                validateSource(packet, client);
+                var A = new BigInteger(packet.getData());
+                log.debug("SRP auth from {}: received A={}", client, A);
+
+
+                var s = Utils.randomBytes(30);
+
+                //send s, B, u
+
+                mitm.sendAs(ProtocolHeader.SRP_SIMPLIFIED, server, client, s);
+                log.debug("SRP auth from {}: send s={}", client, s);
+
+                //B=g**b % N
+                var b = Utils.randomBigInteger(N);
+                var B = g.modPow(b, N);
+                mitm.sendAs(ProtocolHeader.SRP_SIMPLIFIED, server, client, B.toByteArray());
+                log.debug("SRP auth from {}: send B={}", client, B);
+
+                var u = new BigInteger(Utils.randomBytes(16)); //128-bit random number
+                mitm.sendAs(ProtocolHeader.SRP_SIMPLIFIED, server, client, u.toByteArray());
+                log.debug("SRP auth from {}: send u={}", client, u);
+
+
+                packet = mitm.read();
+                validateSource(packet, client);
+                validateDestination(packet, server);
+
+                //pretend that auth is successful
+                var clientHmac = packet.getData();
+                log.debug("Pretended that SRP auth is valid for client {}", client);
+                mitm.sendAs(ProtocolHeader.SRP_SIMPLIFIED, server, client, new byte[]{1});
+
+
+                //now crack the password based on client hmac
+                var words = Files.readAllLines(dictionaryPath);
+
+                String crackedPassword = null;
+                try (var executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())) {
+                    var callables = words.stream().map(word -> (Callable<String>) () -> {
+                        try {
+                            log.debug("Trying password: {}", word);
+                            byte[] x = Utils.SHA256(s, word.getBytes(StandardCharsets.UTF_8));
+                            var v = g.modPow(new BigInteger(x), N);
+                            //S = (A * v ** u)**b % n
+                            var S = A.multiply(v.modPow(u, N)).modPow(b, N);
+                            var K = Utils.SHA256(S.toByteArray());
+
+                            //HMAC-SHA256(K, salt)
+                            var hmac = Utils.hmacSHA256(K, s);
+                            if (Arrays.equals(clientHmac, hmac)) {
+                                return word;
+                            }
+                            throw new RuntimeException("Invalid password");
+                        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }).toList();
+
+                    crackedPassword = executor.invokeAny(callables);
+                } catch (ExecutionException e) {
+                    //do nothing
+                }
+
+                if (crackedPassword != null) {
+                    log.debug("Cracked password of client {}: {}", client, crackedPassword);
+                    mitm.publish(ProtocolHeader.SRP_SIMPLIFIED.name(), client + " password: " + crackedPassword);
+                } else {
+                    mitm.publish(ProtocolHeader.SRP_SIMPLIFIED.name(), client + " password not cracked");
+                }
+            }
+
+            @Override
+            public ProtocolHeader getSupportedHeader() {
+                return ProtocolHeader.SRP_SIMPLIFIED;
             }
         };
     }

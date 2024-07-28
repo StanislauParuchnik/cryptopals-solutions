@@ -4,10 +4,13 @@ import cryptopals.dh.*;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Challenge36SecureRemotePasswordTest {
+public class Challenge38SimplifiedSRPOfflineDictionaryAttackTest {
 
     static BigInteger p = new BigInteger(
             "ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024" +
@@ -22,45 +25,16 @@ public class Challenge36SecureRemotePasswordTest {
 
     BigInteger g = BigInteger.TWO;
 
-    BigInteger k = BigInteger.valueOf(3);
-
     @Test
-    void testSRPRegistration() throws Exception {
+    void testSimplifiedSRPAuth() throws Exception {
         var srpClient = new Client("Carol");
         var userName = "carol@mymail.com";
+
         var password = "carolBestPassword";
 
         var srpServer = new Client("Steeve");
         srpServer.addProtocolHandler(ClientAlgorithms.registerSRPServer());
-
-        var wire = new Wire();
-
-        ClientWireConnection.connect(srpClient, wire);
-        ClientWireConnection.connect(srpServer, wire);
-
-        srpClient.runCommand(ClientAlgorithms.registerSRPClient(srpServer.getName(), userName, password, p, g));
-
-        srpServer.start();
-        srpClient.start();
-
-
-        var registeredUser = srpServer.subscribe(ProtocolHeader.SRP_REGISTER.name(), 1000);
-
-        assertEquals(userName, registeredUser);
-
-        srpServer.stop();
-        srpClient.stop();
-    }
-
-    @Test
-    void testSRPAuth() throws Exception {
-        var srpClient = new Client("Carol");
-        var userName = "carol@mymail.com";
-        var password = "carolBestPassword";
-
-        var srpServer = new Client("Steeve");
-        srpServer.addProtocolHandler(ClientAlgorithms.registerSRPServer());
-        srpServer.addProtocolHandler(ClientAlgorithms.authSRPClientServerHandler(p, g, k));
+        srpServer.addProtocolHandler(ClientAlgorithms.authSimplifiedSRPClientServerHandler(p, g));
 
         var wire = new Wire();
 
@@ -75,10 +49,10 @@ public class Challenge36SecureRemotePasswordTest {
 
         System.out.println();
 
-        srpClient.runCommand(ClientAlgorithms.authSRPClient(srpServer.getName(), userName, password, p, g, k));
+        srpClient.runCommand(ClientAlgorithms.authSimplifiedSRPClient(srpServer.getName(), userName, password, p, g));
 
-        var clientAuthValue = srpClient.subscribe(ProtocolHeader.SRP.name(), 5000);
-        var serverAuthValue = srpServer.subscribe(ProtocolHeader.SRP.name(), 5000);
+        var clientAuthValue = srpClient.subscribe(ProtocolHeader.SRP_SIMPLIFIED.name(), 5000);
+        var serverAuthValue = srpServer.subscribe(ProtocolHeader.SRP_SIMPLIFIED.name(), 5000);
 
         srpServer.stop();
         srpClient.stop();
@@ -87,5 +61,54 @@ public class Challenge36SecureRemotePasswordTest {
         assertEquals(userName, registeredUser);
         assertEquals(srpServer.getName() + ": OK", clientAuthValue);
         assertEquals(srpClient.getName() + ": OK", serverAuthValue);
+    }
+
+
+    @Test
+    void testSimplifiedSRPAuthOfflineDictionaryAttack() throws Exception {
+        var dictionary = Paths.get("src\\test\\resources\\set5\\dictionary.txt");
+        var srpClient = new Client("Carol");
+        var userName = "carol@mymail.com";
+
+        var words = Files.readAllLines(dictionary);
+        //pick among first 500 just for faster test execution
+        var password = words.get(new Random().nextInt(Math.min(words.size(), 500)));
+
+        var srpServer = new Client("Steeve");
+        srpServer.addProtocolHandler(ClientAlgorithms.registerSRPServer());
+        srpServer.addProtocolHandler(ClientAlgorithms.authSimplifiedSRPClientServerHandler(p, g));
+
+        var mallory = new MitmClient("Mallory");
+        mallory.addMitmProtocolHandler(ClientAlgorithms.authSimplifiedSRPClientMitmDictionaryAttackHandler(p, g, dictionary));
+
+        var wire = new Wire();
+
+        ClientWireConnection.connect(srpClient, wire);
+        ClientWireConnection.connect(srpServer, wire);
+        MitmClientWireConnection.connect(mallory, wire);
+
+        srpServer.start();
+        srpClient.start();
+        mallory.start();
+
+        srpClient.runCommand(ClientAlgorithms.registerSRPClient(srpServer.getName(), userName, password, p, g));
+        var registeredUser = srpServer.subscribe(ProtocolHeader.SRP_REGISTER.name(), 1000);
+
+        System.out.println();
+
+        srpClient.runCommand(ClientAlgorithms.authSimplifiedSRPClient(srpServer.getName(), userName, password, p, g));
+
+        Thread.sleep(2);
+
+        var clientAuthValue = srpClient.subscribe(ProtocolHeader.SRP_SIMPLIFIED.name(), 5000);
+        var crackedPasswordValue = mallory.subscribe(ProtocolHeader.SRP_SIMPLIFIED.name(), 600000);
+
+        srpServer.stop();
+        srpClient.stop();
+        mallory.stop();
+
+        assertEquals(userName, registeredUser);
+        assertEquals(srpServer.getName() + ": OK", clientAuthValue);
+        assertEquals(srpClient.getName() + " password: " + password, crackedPasswordValue);
     }
 }

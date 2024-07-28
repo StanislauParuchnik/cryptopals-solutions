@@ -4,5 +4,6 @@ public enum ProtocolHeader {
     DIFFIE_HELLMAN,
     ENCRYPTED_MESSAGE,
     SRP_REGISTER,
-    SRP
+    SRP,
+    SRP_SIMPLIFIED
 }
