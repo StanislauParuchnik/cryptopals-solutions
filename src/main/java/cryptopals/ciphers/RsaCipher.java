@@ -9,33 +9,28 @@ public class RsaCipher {
     public static RsaPrivateKey generatePrivateKey(int bitLength) {
         var e = BigInteger.valueOf(3);
 
-        BigInteger p;
-        BigInteger q;
-
-        BigInteger pm1;
-        BigInteger qm1;
-
-        while (true) {
-            p = BigInteger.probablePrime(bitLength / 2, Utils.SECURE_RANDOM);
-            q = BigInteger.probablePrime(bitLength / 2, Utils.SECURE_RANDOM);
-
-            pm1 = p.subtract(BigInteger.ONE);
-            qm1 = q.subtract(BigInteger.ONE);
-
-            //e must be coprime both to  (p-1) and (q-1) to be coprime invertible modulus (p-1)*(q-1)
-            if (e.gcd(pm1).equals(BigInteger.ONE) && e.gcd(qm1).equals(BigInteger.ONE)) {
-                break;
-            }
-        }
-
+        BigInteger p = generatePrime(bitLength, e);
+        BigInteger q = generatePrime(bitLength, e);
 
         var n = p.multiply(q);
 
-        var et = (pm1).multiply(qm1);
+        BigInteger pm1 = p.subtract(BigInteger.ONE);
+        BigInteger qm1 = q.subtract(BigInteger.ONE);
+        var et = pm1.multiply(qm1);
 
         var d = e.modInverse(et);
 
         return new RsaPrivateKey(p, q, e, d, n);
+    }
+
+    private static BigInteger generatePrime(int bitLength, BigInteger e) {
+        BigInteger prime;
+        do {
+            prime = BigInteger.probablePrime(bitLength / 2, Utils.SECURE_RANDOM);
+
+            //e must be coprime both to (p-1) and (q-1) to be coprime invertible modulus (p-1)*(q-1)
+        } while (!e.gcd(prime.subtract(BigInteger.ONE)).equals(BigInteger.ONE));
+        return prime;
     }
 
     public static RsaPublicKey generatePublicKey(RsaPrivateKey privateKey) {

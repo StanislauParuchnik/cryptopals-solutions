@@ -10,7 +10,10 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
@@ -19,9 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Challenge39RSATest {
 
+    private static final int keyLength = 1024;
+
     @Test
     void test() {
-        var privateKey = RsaCipher.generatePrivateKey(1048);
+        var privateKey = RsaCipher.generatePrivateKey(keyLength);
         var publicKey = RsaCipher.generatePublicKey(privateKey);
 
         var message = "Hello World!";
@@ -38,7 +43,7 @@ public class Challenge39RSATest {
     @Test
     void testAgainstBC() throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         var message = "Hello World!";
-        var privateKey = RsaCipher.generatePrivateKey(1048);
+        var privateKey = RsaCipher.generatePrivateKey(keyLength);
 
 
         var encrypted = encryptWithBC(message.getBytes(StandardCharsets.UTF_8),

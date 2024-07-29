@@ -217,4 +217,59 @@ public class Utils {
         sha256_HMAC.init(new SecretKeySpec(key, "HmacSHA256"));
         return sha256_HMAC.doFinal(input);
     }
+
+    public static BigInteger solveCRT(List<BigInteger> c, List<BigInteger> n) {
+        if (c.size() != n.size()) {
+            throw new IllegalArgumentException("Invalid number of inputs");
+        }
+
+        var r = BigInteger.ZERO;
+
+        for (int i = 0; i < 3; ++i) {
+            var t = BigInteger.ONE;
+            for (int j = 0; j < 3; ++j) {
+                if (i != j) {
+                    t = t.multiply(n.get(j));
+                }
+            }
+            t = t.multiply(t.modInverse(n.get(i)));
+            t = t.multiply(c.get(i));
+            r = r.add(t);
+        }
+
+        var N = n.stream().reduce(BigInteger.ONE, BigInteger::multiply);
+        r = r.mod(N);
+        return r;
+    }
+
+    //returns cube root 'x' of 'a' if 'a' is a perfect cube of x and x is integer
+    public static BigInteger cubeRoot(BigInteger a) {
+        var d = (a.bitLength() - 1) / 3; // binary digits number / 3
+
+        var r = BigInteger.TWO.pow(d + 1);
+        var l = BigInteger.TWO.pow(d);
+
+        var x = l;
+        var o = BigInteger.ZERO;
+
+        do {
+            o = x;
+            var y = x.pow(3);
+
+            var cmp = y.compareTo(a);
+            if (cmp < 0) {
+                l = x;
+            } else {
+                r = x;
+            }
+            if (cmp == 0) {
+                return x;
+            }
+
+            x = l.add(r.subtract(l).shiftRight(1)); //x = l + (r - l)/2;
+
+        } while (o.compareTo(x) != 0);
+
+        return null;
+    }
 }
